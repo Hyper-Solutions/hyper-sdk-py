@@ -173,3 +173,99 @@ from hyper_sdk.incapsula.utmvc import get_utmvc_submit_path
 
 submit_path = get_utmvc_submit_path()
 ```
+
+## Kasada
+
+The Kasada package provides functions for interacting with Kasada Bot Manager, including parsing script path.
+
+### Generating Payload Data (CT)
+
+To generate payload data required for generating valid `x-kpsdk-ct` tokens, use the `generate_kasada_payload` function:
+
+```python
+payload, headers = hyper_session.generate_kasada_payload(hyper_sdk.KasadaPayloadInput(
+    user_agent=USER_AGENT,
+    ips_link=ips_link,
+    script=ips_script,
+    language="en-US"
+))
+# Use payload and headers for the next request
+```
+
+### Generating Pow Data (CD)
+
+To generate POW data (`x-kpsdk-cd`) tokens, use the `generate_kasada_pow` function:
+
+```python
+cd = hyper_session.generate_kasada_pow(hyper_sdk.KasadaPowInput(
+    st=st,
+    work_time=None
+))
+# Use cd as the x-kpsdk-cd header in the next request
+```
+
+### Parsing Script Path
+
+To parse the Kasada script path from the given blocked page (status code 429) HTML code, use the `parse_script_path` function:
+
+```python
+from hyper_sdk.kasada import parse_script_path
+
+script_path = parse_script_path(html_content)
+# script_path will look like: /ips.js?...
+```
+
+## DataDome
+
+The DataDome package provides functions for interacting with DataDome Bot Manager, including parsing device link URLs
+for interstitial and slider challenges.
+
+### Generating Interstitial Payload
+
+To generate payload data required for solving interstitial challenges, use the `generate_interstitial_payload` function:
+
+```python
+payload = hyper_session.generate_interstitial_payload(hyper_sdk.DataDomeInterstitialInput(
+    user_agent=USER_AGENT,
+    device_link=device_check_link,
+    html=html_content
+))
+# Use the payload to POST to https://geo.captcha-delivery.com/interstitial/
+```
+
+### Generating Slider Payload
+
+To solve DataDome Slider challenges, use the `generate_slider_payload` function:
+
+```python
+payload = hyper_session.generate_slider_payload(hyper_sdk.DataDomeSliderInput(
+    user_agent=USER_AGENT,
+    device_link=device_check_link,
+    html=html_content,
+    puzzle=base64_encoded_puzzle,
+    piece=base64_encoded_piece
+))
+# Create a GET request to the payload URL
+```
+
+### Parsing Interstitial DeviceLink URL
+
+To parse the Interstitial DeviceLink URL from the HTML code, use the `parse_interstitial_device_check_link` function:
+
+```python
+from hyper_sdk.datadome import parse_interstitial_device_check_link
+
+device_link = parse_interstitial_device_check_link(html_content, datadome_cookie, referer)
+# device_link will look like: https://geo.captcha-delivery.com/interstitial/?...
+```
+
+### Parsing Slider DeviceLink URL
+
+To parse the Slider DeviceLink URL from the HTML code, use the `parse_slider_device_check_link` function:
+
+```python
+from hyper_sdk.datadome import parse_slider_device_check_link
+
+device_link = parse_slider_device_check_link(html_content, datadome_cookie, referer)
+# device_link will look like: https://geo.captcha-delivery.com/captcha/?...
+```
