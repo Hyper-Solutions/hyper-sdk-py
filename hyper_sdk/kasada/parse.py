@@ -22,6 +22,6 @@ def parse_script_path(src: str) -> str:
     """
     match = script_path_expr.search(src)
     if match:
-        return match.group(1)
+        return re.sub(r'&amp;', '&', match.group(1))
     else:
-        raise "hyper-sdk: script path not found"
+        raise Exception("hyper-sdk: script path not found")
