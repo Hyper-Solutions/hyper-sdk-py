@@ -9,15 +9,16 @@ from typing import List
 
 sec_duration_expr = re.compile(r'data-duration=(\d+)')
 sec_challenge_expr = re.compile(r'challenge="(.*?)"')
-sec_page_expr = re.compile(r'src="(/_sec/cp_challenge/ak-challenge-\d+-\d+.htm)"')
+sec_page_expr = re.compile(r'data-duration=\d+\s+src="([^"]+)"')
 
 
 class SecCptChallengeData:
-    def __init__(self, token: str, timestamp: int, nonce: str, difficulty: int):
+    def __init__(self, token: str, timestamp: int, nonce: str, difficulty: int, count: int):
         self.token = token
         self.timestamp = timestamp
         self.nonce = nonce
         self.difficulty = difficulty
+        self.count = count
 
 
 class SecCptChallenge:
@@ -63,7 +64,8 @@ class SecCptChallenge:
             challenge_data.get('token', ''),
             challenge_data.get('timestamp', 0),
             challenge_data.get('nonce', ''),
-            challenge_data.get('difficulty', 0)
+            challenge_data.get('difficulty', 0),
+            challenge_data.get('count', 0)
         )
 
     @staticmethod
@@ -121,7 +123,7 @@ class SecCptChallenge:
                 difficulty += 1
                 answers.append(answer)
 
-                if len(answers) == 10:
+                if len(answers) == self.challenge_data.count:
                     break
                 continue
 
