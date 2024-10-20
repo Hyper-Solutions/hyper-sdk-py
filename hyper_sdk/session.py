@@ -70,7 +70,7 @@ class Session:
             Returns:
                 str: Dynamic values as a string.
         """
-        sensor_endpoint = "https://akm.justhyped.dev/dynamic"
+        sensor_endpoint = "https://akm.justhyped.dev/v3dynamic"
         return self._send_request(sensor_endpoint, {
             'script': input_data.script,
         })
