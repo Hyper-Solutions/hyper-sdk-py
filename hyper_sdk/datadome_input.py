@@ -48,3 +48,26 @@ class DataDomeInterstitialInput:
             "deviceLink": self.device_link,
             "html": self.html
         }
+
+
+class DataDomeTagsInput:
+    def __init__(self, user_agent: str, cid: str, ddk: str, referer: str, tags_type: str, language = "", ip = ""):
+        # UserAgent must be a Chrome Windows User-Agent.
+        self.user_agent = user_agent
+        self.cid = cid
+        self.ddk = ddk
+        self.referer = referer
+        self.tags_type = tags_type
+        self.language = language
+        self.ip = ip
+
+    def to_dict(self):
+        return {
+            "userAgent": self.user_agent,
+            "cid": self.cid,
+            "ddk": self.ddk,
+            "referer": self.referer,
+            "type": self.tags_type,
+            "language": self.language,
+            "ip": self.ip,
+        }

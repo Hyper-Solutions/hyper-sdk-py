@@ -5,9 +5,9 @@ import requests
 import jwt
 from datetime import datetime, timedelta, timezone
 
-from .akamai_input import SensorInput, PixelInput
+from .akamai_input import SensorInput, PixelInput, DynamicInput, SbsdInput
 from .kasada_input import KasadaPowInput, KasadaPayloadInput
-from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput
+from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput
 
 
@@ -35,6 +35,44 @@ class Session:
             'version': input_data.version,
             'pageUrl': input_data.page_url,
             'scriptHash': input_data.script_hash,
+            'dynamicValues': input_data.dynamic_values,
+            'ip': input_data.ip,
+            'language': input_data.language,
+        })
+
+    def generate_sbsd_data(self, input_data: SbsdInput) -> str:
+        """
+            Returns the sbsd data required to solve SBSD using the Hyper Solutions API.
+
+            Args:
+                input_data (SbsdInput): An instance of SbsdInput containing the necessary data for generating the sbsd data.
+
+            Returns:
+                str: Sensor data as a string.
+        """
+        sensor_endpoint = "https://akm.justhyped.dev/sbsd"
+        return self._send_request(sensor_endpoint, {
+            'userAgent': input_data.user_agent,
+            'uuid': input_data.uuid,
+            'pageUrl': input_data.page_url,
+            'o': input_data.o_cookie,
+            'language': input_data.language,
+            'ip': input_data.ip,
+        })
+
+    def parse_v3_dynamic(self, input_data: DynamicInput) -> str:
+        """
+            Returns the dynamic values required to generate sensor data for V3 dynamic with Hyper Solutions API.
+
+            Args:
+                input_data (DynamicInput): An instance of DynamicInput containing the necessary data for parsing the script.
+
+            Returns:
+                str: Dynamic values as a string.
+        """
+        sensor_endpoint = "https://akm.justhyped.dev/dynamic"
+        return self._send_request(sensor_endpoint, {
+            'script': input_data.script,
         })
 
     def generate_pixel_data(self, input_data: PixelInput) -> str:
@@ -159,7 +197,7 @@ class Session:
 
             Args:
                 session (Session): An instance of Session to handle the network request.
-                input_data (Input): An instance of Input containing the st and optionally workTime.
+                input_data (DataDomeInterstitialInput): An instance of DataDomeInterstitialInput.
 
             Returns:
                 str: The payload to post to /interstitial/
@@ -172,12 +210,25 @@ class Session:
 
             Args:
                 session (Session): An instance of Session to handle the network request.
-                input_data (Input): An instance of Input containing the st and optionally workTime.
+                input_data (DataDomeSliderInput): An instance of DataDomeSliderInput.
 
             Returns:
                 str: The URL to make a GET request to and returns a solved datadome cookie.
         """
         return self._send_request("https://datadome.justhyped.dev/slider", input_data.to_dict())
+
+    def generate_tags_payload(self, input_data: DataDomeTagsInput) -> str:
+        """
+            Returns the DataDome Tags payload using the Hyper Solutions API.
+
+            Args:
+                session (Session): An instance of Session to handle the network request.
+                input_data (DataDomeTagsInput): An instance of DataDomeTagsInput.
+
+            Returns:
+                str: The tags payload.
+        """
+        return self._send_request("https://datadome.justhyped.dev/tags", input_data.to_dict())
 
     def generate_signature(self) -> str:
         claims = {
