@@ -8,7 +8,7 @@ from datetime import datetime, timedelta, timezone
 from .akamai_input import SensorInput, PixelInput, DynamicInput, SbsdInput
 from .kasada_input import KasadaPowInput, KasadaPayloadInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
-from .incapsula_input import UtmvcInput
+from .incapsula_input import UtmvcInput, ReeseInput
 
 
 class Session:
@@ -93,7 +93,7 @@ class Session:
             'scriptVar': input_data.script_var,
         })
 
-    def generate_reese84_sensor(self, site: str, user_agent: str) -> str:
+    def generate_reese84_sensor(self, site: str, input_data: ReeseInput) -> str:
         """
             Returns the sensor data required to generate valid reese84 cookies using the Hyper Solutions API.
 
@@ -101,7 +101,7 @@ class Session:
 
             Args:
                 site (str): The name of the site that will be used to generate the sensor data.
-                user_agent (str): The user agent string used to generate the sensor data.
+                input_data (ReeseInput): The input data.
 
             Returns:
                 str: Sensor data as a string.
@@ -111,7 +111,9 @@ class Session:
         """
         return self._send_request("https://incapsula.justhyped.dev/reese84/" + quote(site),
                                   {
-                                      'userAgent': user_agent,
+                                      'userAgent': input_data.user_agent,
+                                      'language': input_data.language,
+                                      'ip': input_data.ip,
                                   })
 
     def generate_utmvc_cookie(self, input_data: UtmvcInput) -> str:

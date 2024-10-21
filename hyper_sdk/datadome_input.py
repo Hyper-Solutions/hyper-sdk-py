@@ -1,5 +1,6 @@
+
 class DataDomeSliderInput:
-    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -20,18 +21,23 @@ class DataDomeSliderInput:
         # https://dd.prod.captcha-delivery.com/image/2024-xx-xx/hash.frag.png
         self.piece = piece
 
+        self.language = language
+        self.ip = ip
+
     def to_dict(self):
         return {
             "userAgent": self.user_agent,
             "deviceLink": self.device_link,
             "html": self.html,
             "puzzle": self.puzzle,
-            "piece": self.piece
+            "piece": self.piece,
+            "language": self.language,
+            "ip": self.ip,
         }
 
 
 class DataDomeInterstitialInput:
-    def __init__(self, user_agent: str, device_link: str, html: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -42,16 +48,21 @@ class DataDomeInterstitialInput:
         # Html is the response body of the GET request to the DeviceLink
         self.html = html
 
+        self.language = language
+        self.ip = ip
+
     def to_dict(self):
         return {
             "userAgent": self.user_agent,
             "deviceLink": self.device_link,
-            "html": self.html
+            "html": self.html,
+            "language": self.language,
+            "ip": self.ip,
         }
 
 
 class DataDomeTagsInput:
-    def __init__(self, user_agent: str, cid: str, ddk: str, referer: str, tags_type: str, language = "", ip = ""):
+    def __init__(self, user_agent: str, cid: str, ddk: str, referer: str, tags_type: str, language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
         self.cid = cid
