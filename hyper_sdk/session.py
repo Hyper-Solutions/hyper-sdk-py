@@ -194,31 +194,33 @@ class Session:
 
         return response_data["payload"], response_data["headers"]
 
-    def generate_interstitial_payload(self, input_data: DataDomeInterstitialInput) -> str:
+    def generate_interstitial_payload(self, input_data: DataDomeInterstitialInput) -> Dict[str, Any]:
         """
-            Returns the DataDome interstitial payload value using the Hyper Solutions API.
+        Returns the DataDome interstitial payload value and response headers using the Hyper Solutions API.
 
-            Args:
-                session (Session): An instance of Session to handle the network request.
-                input_data (DataDomeInterstitialInput): An instance of DataDomeInterstitialInput.
+        Args:
+            input_data (DataDomeInterstitialInput): An instance of DataDomeInterstitialInput.
 
-            Returns:
-                str: The payload to post to /interstitial/
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - payload (str): The payload to post to /interstitial/
+                - headers (Dict[str, str]): The response headers
         """
-        return self._send_request("https://datadome.justhyped.dev/interstitial", input_data.to_dict())
+        return self._send_request_with_headers("https://datadome.justhyped.dev/interstitial", input_data.to_dict())
 
-    def generate_slider_payload(self, input_data: DataDomeSliderInput) -> str:
+    def generate_slider_payload(self, input_data: DataDomeSliderInput) -> Dict[str, Any]:
         """
-            Returns the DataDome Slider URL value using the Hyper Solutions API.
+        Returns the DataDome Slider URL value and response headers using the Hyper Solutions API.
 
-            Args:
-                session (Session): An instance of Session to handle the network request.
-                input_data (DataDomeSliderInput): An instance of DataDomeSliderInput.
+        Args:
+            input_data (DataDomeSliderInput): An instance of DataDomeSliderInput.
 
-            Returns:
-                str: The URL to make a GET request to and returns a solved datadome cookie.
+        Returns:
+            Dict[str, Any]: A dictionary containing:
+                - payload (str): The URL to make a GET request to for a solved datadome cookie
+                - headers (Dict[str, str]): The response headers
         """
-        return self._send_request("https://datadome.justhyped.dev/slider", input_data.to_dict())
+        return self._send_request_with_headers("https://datadome.justhyped.dev/slider", input_data.to_dict())
 
     def generate_tags_payload(self, input_data: DataDomeTagsInput) -> str:
         """
@@ -266,3 +268,34 @@ class Session:
             raise Exception(f"API returned with status code: {response.status_code}")
 
         return response_data["payload"]
+
+    def _send_request_with_headers(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        if not self.api_key:
+            raise ValueError("Missing API key")
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Api-Key': self.api_key
+        }
+
+        if self.jwt_key:
+            signature = self.generate_signature()
+            headers['X-Signature'] = signature
+
+        response = self.client.post(url, headers=headers, json=input_data)
+
+        response_data = response.json()
+
+        if "error" in response_data and response_data["error"]:
+            raise Exception(f"API returned with error: {response_data['error']}")
+
+        if response.status_code != 200:
+            raise Exception(f"API returned with status code: {response.status_code}")
+
+        response_headers = dict(response.headers)
+
+        return {
+            "payload": response_data["payload"],
+            "headers": response_headers
+        }
