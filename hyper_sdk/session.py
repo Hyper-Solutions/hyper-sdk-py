@@ -56,7 +56,7 @@ class Session:
             'uuid': input_data.uuid,
             'pageUrl': input_data.page_url,
             'o': input_data.o_cookie,
-            'scriptHash': input_data.script_hash,
+            'script': input_data.script,
             'language': input_data.language,
             'ip': input_data.ip,
         })

@@ -13,7 +13,7 @@ class KasadaPowInput:
 
 
 class KasadaPayloadInput:
-    def __init__(self, user_agent: str, ips_link: str, script: str, language: str):
+    def __init__(self, user_agent: str, ips_link: str, script: str, language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -25,6 +25,7 @@ class KasadaPayloadInput:
 
         # Language is the first language of your accept-language header
         self.language = language
+        self.ip = ip
 
     def to_dict(self):
         result = {
@@ -32,5 +33,6 @@ class KasadaPayloadInput:
             "ipsLink": self.ips_link,
             "script": self.script,
             "language": self.language,
+            "ip": self.ip,
         }
         return result

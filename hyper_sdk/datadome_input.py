@@ -1,6 +1,6 @@
 
 class DataDomeSliderInput:
-    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, language: str, ip: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, parent_url: str, language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -21,6 +21,7 @@ class DataDomeSliderInput:
         # https://dd.prod.captcha-delivery.com/image/2024-xx-xx/hash.frag.png
         self.piece = piece
 
+        self.parent_url = parent_url
         self.language = language
         self.ip = ip
 
@@ -31,6 +32,7 @@ class DataDomeSliderInput:
             "html": self.html,
             "puzzle": self.puzzle,
             "piece": self.piece,
+            "parentUrl": self.parent_url,
             "language": self.language,
             "ip": self.ip,
         }
