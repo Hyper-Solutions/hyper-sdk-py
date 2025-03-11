@@ -92,6 +92,8 @@ class Session:
             'userAgent': input_data.user_agent,
             'htmlVar': input_data.html_var,
             'scriptVar': input_data.script_var,
+            'ip': input_data.ip,
+            'language': input_data.language,
         })
 
     def generate_reese84_sensor(self, site: str, input_data: ReeseInput) -> str:
