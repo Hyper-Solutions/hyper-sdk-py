@@ -64,13 +64,14 @@ class DataDomeInterstitialInput:
 
 
 class DataDomeTagsInput:
-    def __init__(self, user_agent: str, cid: str, ddk: str, referer: str, tags_type: str, language: str, ip: str):
+    def __init__(self, user_agent: str, cid: str, ddk: str, referer: str, tags_type: str, version: str, language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
         self.cid = cid
         self.ddk = ddk
         self.referer = referer
         self.tags_type = tags_type
+        self.version = version
         self.language = language
         self.ip = ip
 
@@ -83,4 +84,5 @@ class DataDomeTagsInput:
             "type": self.tags_type,
             "language": self.language,
             "ip": self.ip,
+            "version": self.version,
         }
