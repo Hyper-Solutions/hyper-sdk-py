@@ -8,7 +8,8 @@ class UtmvcInput:
         self.script = script
 
 class ReeseInput:
-    def __init__(self, user_agent: str, language: str, ip: str):
+    def __init__(self, user_agent: str, language: str, ip: str, scriptUrl: str = ""):
         self.user_agent = user_agent
         self.language = language
         self.ip = ip
+        self.scriptUrl = scriptUrl

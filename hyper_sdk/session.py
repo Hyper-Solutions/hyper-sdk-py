@@ -117,6 +117,7 @@ class Session:
                                       'userAgent': input_data.user_agent,
                                       'language': input_data.language,
                                       'ip': input_data.ip,
+                                      'scriptUrl': input_data.scriptUrl,
                                   })
 
     def generate_utmvc_cookie(self, input_data: UtmvcInput) -> str:
