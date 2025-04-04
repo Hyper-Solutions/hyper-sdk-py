@@ -37,7 +37,7 @@ class Session:
             'scriptHash': input_data.script_hash,
             'dynamicValues': input_data.dynamic_values,
             'ip': input_data.ip,
-            'language': input_data.language,
+            'acceptLanguage': input_data.acceptLanguage,
         })
 
     def generate_sbsd_data(self, input_data: SbsdInput) -> str:
@@ -57,7 +57,7 @@ class Session:
             'pageUrl': input_data.page_url,
             'o': input_data.o_cookie,
             'script': input_data.script,
-            'language': input_data.language,
+            'acceptLanguage': input_data.acceptLanguage,
             'ip': input_data.ip,
         })
 
@@ -93,7 +93,7 @@ class Session:
             'htmlVar': input_data.html_var,
             'scriptVar': input_data.script_var,
             'ip': input_data.ip,
-            'language': input_data.language,
+            'acceptLanguage': input_data.acceptLanguage,
         })
 
     def generate_reese84_sensor(self, site: str, input_data: ReeseInput) -> str:
@@ -115,7 +115,7 @@ class Session:
         return self._send_request("https://incapsula.justhyped.dev/reese84/" + quote(site),
                                   {
                                       'userAgent': input_data.user_agent,
-                                      'language': input_data.language,
+                                      'acceptLanguage': input_data.acceptLanguage,
                                       'ip': input_data.ip,
                                       'scriptUrl': input_data.scriptUrl,
                                   })
