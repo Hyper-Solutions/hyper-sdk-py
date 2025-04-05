@@ -77,6 +77,7 @@ def parse_interstitial_device_check_link(src: str, datadome_cookie: str, referer
         "referer": referer,
         "s": str(dd_object_parsed.get("s")),
         "b": str(dd_object_parsed.get("b")),
+        "dm": "cd",
     }
 
     return f"https://geo.captcha-delivery.com/interstitial/?{urlencode(params)}"
