@@ -3,6 +3,7 @@ from .akamai.script_path import *
 from .akamai.sec_cpt import *
 from .akamai.stop_signal import *
 from .incapsula.utmvc import *
+from .incapsula.dynamic import *
 from .session import *
 from .kasada.parse import *
 from .datadome.parse import *
