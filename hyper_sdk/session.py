@@ -17,7 +17,7 @@ class Session:
         self.jwt_key = jwt_key
         self.client = requests.Session() if client is None else client
 
-    def generate_sensor_data(self, input_data: SensorInput) -> str:
+    def generate_sensor_data(self, input_data: SensorInput) -> tuple[str, str]:
         """
             Returns the sensor data required to generate valid akamai cookies using the Hyper Solutions API.
 
@@ -26,9 +26,23 @@ class Session:
 
             Returns:
                 str: Sensor data as a string.
+                str: Context data as a string.
         """
-        sensor_endpoint = "https://akm.justhyped.dev/sensor"
-        return self._send_request(sensor_endpoint, {
+        sensor_endpoint = "https://akm.justhyped.dev/v2/sensor"
+        if not self.api_key:
+            raise ValueError("Missing API key")
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Api-Key': self.api_key
+        }
+
+        if self.jwt_key:
+            signature = self.generate_signature()
+            headers['X-Signature'] = signature
+
+        response = self.client.post(sensor_endpoint, headers=headers, json={
             'userAgent': input_data.user_agent,
             'abck': input_data.abck,
             'bmsz': input_data.bmsz,
@@ -39,6 +53,16 @@ class Session:
             'ip': input_data.ip,
             'acceptLanguage': input_data.acceptLanguage,
         })
+
+        response_data = response.json()
+
+        if "error" in response_data and response_data["error"]:
+            raise Exception(f"API returned with error: {response_data['error']}")
+
+        if response.status_code != 200:
+            raise Exception(f"API returned with status code: {response.status_code}")
+
+        return response_data["payload"], response_data["context"]
 
     def generate_sbsd_data(self, input_data: SbsdInput) -> str:
         """
@@ -133,21 +157,40 @@ class Session:
 
             Returns:
                 str: The utmvc cookie as a string.
+                str: The swhanedl parameter.
 
             Raises:
                 ValueError: If the script attribute or session IDs in input_data are empty.
         """
-        if not input_data.script:
-            raise ValueError("script must be non empty")
+        if not self.api_key:
+            raise ValueError("Missing API key")
 
-        if not input_data.session_ids:
-            raise ValueError("no session ids set")
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept-Encoding': 'gzip',
+            'X-Api-Key': self.api_key
+        }
 
-        return self._send_request("https://incapsula.justhyped.dev/utmvc", {
+        if self.jwt_key:
+            signature = self.generate_signature()
+            headers['X-Signature'] = signature
+
+        response = self.client.post("https://incapsula.justhyped.dev/utmvc", headers=headers, json={
             'userAgent': input_data.user_agent,
             'sessionIds': input_data.session_ids,
             'script': input_data.script,
         })
+
+        response_data = response.json()
+
+        if "error" in response_data and response_data["error"]:
+            raise Exception(f"API returned with error: {response_data['error']}")
+
+        if response.status_code != 200:
+            raise Exception(f"API returned with status code: {response.status_code}")
+
+        return response_data["payload"], response_data["swhanedl"]
+
 
     def generate_kasada_pow(self, input_data: KasadaPowInput) -> str:
         """

@@ -1,5 +1,5 @@
 class SensorInput:
-    def __init__(self, abck: str, bmsz: str, version: str, page_url: str, user_agent: str, ip: str, acceptLanguage: str, script_hash="", dynamic_values=""):
+    def __init__(self, abck: str, bmsz: str, version: str, page_url: str, user_agent: str, ip: str, acceptLanguage: str, context: str, script_hash="", dynamic_values=""):
         self.abck = abck
         self.bmsz = bmsz
         self.version = version
@@ -7,6 +7,7 @@ class SensorInput:
         self.user_agent = user_agent
         self.script_hash = script_hash
         self.dynamic_values = dynamic_values
+        self.context = context
         self.ip = ip
         self.acceptLanguage = acceptLanguage
 
