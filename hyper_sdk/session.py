@@ -142,6 +142,7 @@ class Session:
                                       'acceptLanguage': input_data.acceptLanguage,
                                       'ip': input_data.ip,
                                       'scriptUrl': input_data.scriptUrl,
+                                      'pageUrl': input_data.pageUrl,
                                   })
 
     def generate_utmvc_cookie(self, input_data: UtmvcInput) -> str:
