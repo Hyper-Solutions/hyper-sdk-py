@@ -50,6 +50,7 @@ class Session:
             'pageUrl': input_data.page_url,
             'scriptHash': input_data.script_hash,
             'dynamicValues': input_data.dynamic_values,
+            'context': input_data.context,
             'ip': input_data.ip,
             'acceptLanguage': input_data.acceptLanguage,
         })
