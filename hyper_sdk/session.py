@@ -28,7 +28,7 @@ class Session:
                 str: Sensor data as a string.
                 str: Context data as a string.
         """
-        sensor_endpoint = "https://akm.justhyped.dev/v2/sensor"
+        sensor_endpoint = "https://akm.hypersolutions.co/v2/sensor"
         if not self.api_key:
             raise ValueError("Missing API key")
 
@@ -75,7 +75,7 @@ class Session:
             Returns:
                 str: Sensor data as a string.
         """
-        sensor_endpoint = "https://akm.justhyped.dev/sbsd"
+        sensor_endpoint = "https://akm.hypersolutions.co/sbsd"
         return self._send_request(sensor_endpoint, {
             'userAgent': input_data.user_agent,
             'uuid': input_data.uuid,
@@ -96,7 +96,7 @@ class Session:
             Returns:
                 str: Dynamic values as a string.
         """
-        sensor_endpoint = "https://akm.justhyped.dev/v3dynamic"
+        sensor_endpoint = "https://akm.hypersolutions.co/v3dynamic"
         return self._send_request(sensor_endpoint, {
             'script': input_data.script,
         })
@@ -112,7 +112,7 @@ class Session:
             Returns:
                 str: Pixel data as a string.
         """
-        pixel_endpoint = "https://akm.justhyped.dev/pixel"
+        pixel_endpoint = "https://akm.hypersolutions.co/pixel"
         return self._send_request(pixel_endpoint, {
             'userAgent': input_data.user_agent,
             'htmlVar': input_data.html_var,
@@ -137,7 +137,7 @@ class Session:
             Raises:
                 ValueError: If the script attribute in input_data is empty.
         """
-        return self._send_request("https://incapsula.justhyped.dev/reese84/" + quote(site),
+        return self._send_request("https://incapsula.hypersolutions.co/reese84/" + quote(site),
                                   {
                                       'userAgent': input_data.user_agent,
                                       'acceptLanguage': input_data.acceptLanguage,
@@ -177,7 +177,7 @@ class Session:
             signature = self.generate_signature()
             headers['X-Signature'] = signature
 
-        response = self.client.post("https://incapsula.justhyped.dev/utmvc", headers=headers, json={
+        response = self.client.post("https://incapsula.hypersolutions.co/utmvc", headers=headers, json={
             'userAgent': input_data.user_agent,
             'sessionIds': input_data.session_ids,
             'script': input_data.script,
@@ -205,7 +205,7 @@ class Session:
             Returns:
                 str: The x-kpsdk-cd value as a string.
         """
-        return self._send_request("https://kasada.justhyped.dev/cd", input_data.to_dict())
+        return self._send_request("https://kasada.hypersolutions.co/cd", input_data.to_dict())
 
     def generate_kasada_payload(self, input_data: KasadaPayloadInput) -> tuple[str, dict]:
         """
@@ -230,7 +230,7 @@ class Session:
             signature = self.generate_signature()
             headers['X-Signature'] = signature
 
-        response = self.client.post("https://kasada.justhyped.dev/payload", headers=headers, json=input_data.to_dict())
+        response = self.client.post("https://kasada.hypersolutions.co/payload", headers=headers, json=input_data.to_dict())
 
         response_data = response.json()
 
@@ -254,7 +254,7 @@ class Session:
                 - payload (str): The payload to post to /interstitial/
                 - headers (Dict[str, str]): The response headers
         """
-        return self._send_request_with_headers("https://datadome.justhyped.dev/interstitial", input_data.to_dict())
+        return self._send_request_with_headers("https://datadome.hypersolutions.co/interstitial", input_data.to_dict())
 
     def generate_slider_payload(self, input_data: DataDomeSliderInput) -> Dict[str, Any]:
         """
@@ -268,7 +268,7 @@ class Session:
                 - payload (str): The URL to make a GET request to for a solved datadome cookie
                 - headers (Dict[str, str]): The response headers
         """
-        return self._send_request_with_headers("https://datadome.justhyped.dev/slider", input_data.to_dict())
+        return self._send_request_with_headers("https://datadome.hypersolutions.co/slider", input_data.to_dict())
 
     def generate_tags_payload(self, input_data: DataDomeTagsInput) -> str:
         """
@@ -281,7 +281,7 @@ class Session:
             Returns:
                 str: The tags payload.
         """
-        return self._send_request("https://datadome.justhyped.dev/tags", input_data.to_dict())
+        return self._send_request("https://datadome.hypersolutions.co/tags", input_data.to_dict())
 
     def generate_signature(self) -> str:
         claims = {
