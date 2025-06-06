@@ -341,9 +341,7 @@ class Session:
         if response.status_code != 200:
             raise Exception(f"API returned with status code: {response.status_code}")
 
-        response_headers = dict(response.headers)
-
         return {
             "payload": response_data["payload"],
-            "headers": response_headers
+            "headers": response_data["headers"]
         }
