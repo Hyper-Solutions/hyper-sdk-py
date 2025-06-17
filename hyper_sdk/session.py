@@ -291,7 +291,7 @@ class Session:
             "exp": datetime.now(timezone.utc) + timedelta(seconds=60)
         }
         token = jwt.encode(claims, self.jwt_key, algorithm='HS256')
-        return token.decode('utf-8')
+        return token.decode('utf-8') if type(token) == bytes else token
 
     def _send_request(self, url: str, input_data: Dict[str, Any]) -> str:
         if not self.api_key:
