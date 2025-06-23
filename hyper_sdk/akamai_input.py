@@ -27,7 +27,8 @@ class DynamicInput:
 
 
 class SbsdInput:
-    def __init__(self, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str, acceptLanguage: str, ip: str):
+    def __init__(self, index: int, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str, acceptLanguage: str, ip: str):
+        self.index = index
         self.user_agent = user_agent
         self.uuid = uuid
         self.page_url = page_url

@@ -84,6 +84,7 @@ class Session:
             'script': input_data.script,
             'acceptLanguage': input_data.acceptLanguage,
             'ip': input_data.ip,
+            'index': input_data.index,
         })
 
     def parse_v3_dynamic(self, input_data: DynamicInput) -> str:
