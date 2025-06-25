@@ -1,4 +1,4 @@
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Tuple
 from urllib.parse import quote
 
 import requests
@@ -9,6 +9,7 @@ from .akamai_input import SensorInput, PixelInput, DynamicInput, SbsdInput
 from .kasada_input import KasadaPowInput, KasadaPayloadInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
+from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
 
 
 class Session:
@@ -196,7 +197,6 @@ class Session:
 
         return response_data["payload"], response_data["swhanedl"]
 
-
     def generate_kasada_pow(self, input_data: KasadaPowInput) -> str:
         """
             Returns the x-kpsdk-cd value using the Hyper Solutions API.
@@ -285,6 +285,83 @@ class Session:
                 str: The tags payload.
         """
         return self._send_request("https://datadome.hypersolutions.co/tags", input_data.to_dict())
+
+    def generate_trustdecision_payload(self, input_data: PayloadInput) -> Tuple[str, str, str]:
+        """
+        Generates TrustDecision payload that should be posted to TrustDecision's fingerprinting endpoint.
+        Also returns timezone and clientId required for subsequent operations.
+
+        Args:
+            input_data (PayloadInput): An instance of PayloadInput containing the necessary data for generating the payload.
+
+        Returns:
+            Tuple[str, str, str]: A tuple containing:
+                - payload (str): The generated TrustDecision payload for posting to the fingerprinting endpoint
+                - timeZone (str): The timezone to use in the tz header for subsequent requests
+                - clientId (str): The client ID required for generating session signatures
+        """
+        if not self.api_key:
+            raise ValueError("Missing API key")
+
+        headers = {
+            'Content-Type': 'application/json',
+            'x-api-key': self.api_key
+        }
+
+        if self.jwt_key:
+            signature = self.generate_signature()
+            headers['x-signature'] = signature
+
+        response = self.client.post("https://trustdecision.hypersolutions.co/payload", headers=headers, json={
+            'userAgent': input_data.user_agent,
+            'pageUrl': input_data.page_url,
+            'fpUrl': input_data.fp_url,
+            'ip': input_data.ip,
+            'acceptLanguage': input_data.accept_language,
+            'script': input_data.script,
+        })
+
+        response_data = response.json()
+
+        if "error" in response_data and response_data["error"]:
+            raise Exception(f"API returned with error: {response_data['error']}")
+
+        if response.status_code != 200:
+            raise Exception(f"API returned with status code: {response.status_code}")
+
+        return response_data["payload"], response_data["timeZone"], response_data["clientId"]
+
+    def decode_trustdecision_session_key(self, input_data: DecodeInput) -> str:
+        """
+        Decodes the result and requestId from TrustDecision's fingerprinting endpoint
+        to generate the td-session-key header value.
+
+        Args:
+            input_data (DecodeInput): An instance of DecodeInput containing the result and requestId.
+
+        Returns:
+            str: The decoded session key value for use in the td-session-key header
+        """
+        return self._send_request("https://trustdecision.hypersolutions.co/decode", {
+            'result': input_data.result,
+            'requestId': input_data.request_id,
+        })
+
+    def generate_trustdecision_signature(self, input_data: SignatureInput) -> str:
+        """
+        Generates a unique td-session-sign header value for each API request.
+        This signature can only be used once and must be regenerated for every request.
+
+        Args:
+            input_data (SignatureInput): An instance of SignatureInput containing the clientId and path.
+
+        Returns:
+            str: The generated signature value for use in the td-session-sign header (single-use only)
+        """
+        return self._send_request("https://trustdecision.hypersolutions.co/sign", {
+            'clientId': input_data.client_id,
+            'path': input_data.path,
+        })
 
     def generate_signature(self) -> str:
         claims = {
