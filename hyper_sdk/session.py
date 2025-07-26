@@ -13,9 +13,12 @@ from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
 
 
 class Session:
-    def __init__(self, api_key: str, jwt_key: Optional[str] = None, client: Optional[requests.Session] = None) -> None:
+    def __init__(self, api_key: str, jwt_key: Optional[str] = None, app_key: Optional[str] = None,
+                 app_secret: Optional[str] = None, client: Optional[requests.Session] = None) -> None:
         self.api_key = api_key
         self.jwt_key = jwt_key
+        self.app_key = app_key
+        self.app_secret = app_secret
         self.client = requests.Session() if client is None else client
 
     def generate_sensor_data(self, input_data: SensorInput) -> tuple[str, str]:
@@ -33,15 +36,7 @@ class Session:
         if not self.api_key:
             raise ValueError("Missing API key")
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Api-Key': self.api_key
-        }
-
-        if self.jwt_key:
-            signature = self.generate_signature()
-            headers['X-Signature'] = signature
+        headers = self._build_headers()
 
         response = self.client.post(sensor_endpoint, headers=headers, json={
             'userAgent': input_data.user_agent,
@@ -171,15 +166,7 @@ class Session:
         if not self.api_key:
             raise ValueError("Missing API key")
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Api-Key': self.api_key
-        }
-
-        if self.jwt_key:
-            signature = self.generate_signature()
-            headers['X-Signature'] = signature
+        headers = self._build_headers()
 
         response = self.client.post("https://incapsula.hypersolutions.co/utmvc", headers=headers, json={
             'userAgent': input_data.user_agent,
@@ -223,17 +210,10 @@ class Session:
         if not self.api_key:
             raise ValueError("Missing API key")
 
-        headers = {
-            'Content-Type': 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Api-Key': self.api_key
-        }
+        headers = self._build_headers()
 
-        if self.jwt_key:
-            signature = self.generate_signature()
-            headers['X-Signature'] = signature
-
-        response = self.client.post("https://kasada.hypersolutions.co/payload", headers=headers, json=input_data.to_dict())
+        response = self.client.post("https://kasada.hypersolutions.co/payload", headers=headers,
+                                    json=input_data.to_dict())
 
         response_data = response.json()
 
@@ -303,14 +283,7 @@ class Session:
         if not self.api_key:
             raise ValueError("Missing API key")
 
-        headers = {
-            'Content-Type': 'application/json',
-            'x-api-key': self.api_key
-        }
-
-        if self.jwt_key:
-            signature = self.generate_signature()
-            headers['x-signature'] = signature
+        headers = self._build_headers()
 
         response = self.client.post("https://trustdecision.hypersolutions.co/payload", headers=headers, json={
             'userAgent': input_data.user_agent,
@@ -363,15 +336,31 @@ class Session:
             'path': input_data.path,
         })
 
-    def generate_signature(self) -> str:
+    def generate_signature(self, key: str, secret: str) -> str:
+        """
+        Generates a JWT signature using the provided key and secret.
+
+        Args:
+            key (str): The key to include in the JWT claims
+            secret (str): The secret used to sign the JWT
+
+        Returns:
+            str: The generated JWT token
+        """
         claims = {
-            "key": self.api_key,
+            "key": key,
             "exp": datetime.now(timezone.utc) + timedelta(seconds=60)
         }
-        token = jwt.encode(claims, self.jwt_key, algorithm='HS256')
+        token = jwt.encode(claims, secret, algorithm='HS256')
         return token.decode('utf-8') if type(token) == bytes else token
 
-    def _send_request(self, url: str, input_data: Dict[str, Any]) -> str:
+    def _build_headers(self) -> Dict[str, str]:
+        """
+        Builds the headers dictionary including organization credentials if available.
+
+        Returns:
+            Dict[str, str]: Headers dictionary with all required authentication headers
+        """
         if not self.api_key:
             raise ValueError("Missing API key")
 
@@ -382,8 +371,18 @@ class Session:
         }
 
         if self.jwt_key:
-            signature = self.generate_signature()
+            signature = self.generate_signature(self.api_key, self.jwt_key)
             headers['X-Signature'] = signature
+
+        if self.app_key and self.app_secret:
+            app_signature = self.generate_signature(self.app_key, self.app_secret)
+            headers['X-App-Signature'] = app_signature
+            headers['X-App-Key'] = self.app_key
+
+        return headers
+
+    def _send_request(self, url: str, input_data: Dict[str, Any]) -> str:
+        headers = self._build_headers()
 
         response = self.client.post(url, headers=headers, json=input_data)
 
@@ -398,18 +397,7 @@ class Session:
         return response_data["payload"]
 
     def _send_request_with_headers(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        if not self.api_key:
-            raise ValueError("Missing API key")
-
-        headers = {
-            'Content-Type': 'application/json',
-            'Accept-Encoding': 'gzip',
-            'X-Api-Key': self.api_key
-        }
-
-        if self.jwt_key:
-            signature = self.generate_signature()
-            headers['X-Signature'] = signature
+        headers = self._build_headers()
 
         response = self.client.post(url, headers=headers, json=input_data)
 
