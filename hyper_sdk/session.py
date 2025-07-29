@@ -59,7 +59,7 @@ class Session:
         if response.status_code != 200:
             raise Exception(f"API returned with status code: {response.status_code}")
 
-        return response_data["payload"], response_data["context"]
+        return response_data["payload"], response_data.get("context", "")
 
     def generate_sbsd_data(self, input_data: SbsdInput) -> str:
         """
