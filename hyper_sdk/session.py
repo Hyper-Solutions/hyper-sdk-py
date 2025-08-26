@@ -142,7 +142,7 @@ class Session:
                                       'scriptUrl': input_data.scriptUrl,
                                       'pageUrl': input_data.pageUrl,
                                       'pow': input_data.pow,
-                                      'wasm': input_data.wasm,
+                                      'script': input_data.script,
                                   })
 
     def generate_utmvc_cookie(self, input_data: UtmvcInput) -> str:
