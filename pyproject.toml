@@ -7,19 +7,20 @@ name = "hyper_sdk"
 version = "2.5.0"
 description = "Hyper Solutions Python SDK"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.7"
 classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
+    "Framework :: AsyncIO",
 ]
 dependencies = [
+    "httpx[http2]>=0.24.0",
     "certifi>=2024.2.2",
     "charset-normalizer>=3.3.2",
     "idna>=3.6",
     "jsonpickle>=3.0.3",
     "PyJWT>=2.8.0",
-    "requests>=2.31.0",
     "urllib3>=2.2.1",
 ]
 license = {file = "LICENSE"}
@@ -28,4 +29,10 @@ license = {file = "LICENSE"}
 homepage = "https://github.com/Hyper-Solutions/hyper-sdk-py"
 
 [tool.setuptools]
-packages = ["hyper_sdk", "hyper_sdk.akamai", "hyper_sdk.incapsula", "hyper_sdk.kasada", "hyper_sdk.datadome"]
+packages = [
+    "hyper_sdk",
+    "hyper_sdk.akamai",
+    "hyper_sdk.incapsula",
+    "hyper_sdk.kasada",
+    "hyper_sdk.datadome",
+]

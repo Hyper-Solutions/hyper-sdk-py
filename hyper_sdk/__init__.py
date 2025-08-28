@@ -5,5 +5,6 @@ from .akamai.stop_signal import *
 from .incapsula.utmvc import *
 from .incapsula.dynamic import *
 from .session import *
+from .session_async import *
 from .kasada.parse import *
 from .datadome.parse import *
