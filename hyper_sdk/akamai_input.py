@@ -1,12 +1,12 @@
 class SensorInput:
-    def __init__(self, abck: str, bmsz: str, version: str, page_url: str, user_agent: str, ip: str, acceptLanguage: str, context: str, script_hash="", dynamic_values=""):
+    def __init__(self, abck: str, bmsz: str, version: str, page_url: str, user_agent: str, ip: str, acceptLanguage: str,
+                 context: str, script: str):
         self.abck = abck
         self.bmsz = bmsz
         self.version = version
         self.page_url = page_url
         self.user_agent = user_agent
-        self.script_hash = script_hash
-        self.dynamic_values = dynamic_values
+        self.script = script
         self.context = context
         self.ip = ip
         self.acceptLanguage = acceptLanguage
@@ -21,13 +21,9 @@ class PixelInput:
         self.ip = ip
 
 
-class DynamicInput:
-    def __init__(self, script: str):
-        self.script = script
-
-
 class SbsdInput:
-    def __init__(self, index: int, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str, acceptLanguage: str, ip: str):
+    def __init__(self, index: int, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str,
+                 acceptLanguage: str, ip: str):
         self.index = index
         self.user_agent = user_agent
         self.uuid = uuid

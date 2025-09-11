@@ -7,7 +7,7 @@ import json
 import zstandard as zstd
 
 from .shared import generate_signature, build_headers, validate_response
-from .akamai_input import SensorInput, PixelInput, DynamicInput, SbsdInput
+from .akamai_input import SensorInput, PixelInput, SbsdInput
 from .kasada_input import KasadaPowInput, KasadaPayloadInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
@@ -67,8 +67,7 @@ class SessionAsync:
             'bmsz': input_data.bmsz,
             'version': input_data.version,
             'pageUrl': input_data.page_url,
-            'scriptHash': input_data.script_hash,
-            'dynamicValues': input_data.dynamic_values,
+            'script': input_data.script,
             'context': input_data.context,
             'ip': input_data.ip,
             'acceptLanguage': input_data.acceptLanguage,
@@ -109,21 +108,6 @@ class SessionAsync:
             'acceptLanguage': input_data.acceptLanguage,
             'ip': input_data.ip,
             'index': input_data.index,
-        })
-
-    async def parse_v3_dynamic(self, input_data: DynamicInput) -> str:
-        """
-        Returns the dynamic values required to generate sensor data for V3 dynamic with Hyper Solutions API.
-
-        Args:
-            input_data (DynamicInput): An instance of DynamicInput containing the necessary data for parsing the script.
-
-        Returns:
-            str: Dynamic values as a string.
-        """
-        sensor_endpoint = "https://akm.hypersolutions.co/v3dynamic"
-        return await self._send_request(sensor_endpoint, {
-            'script': input_data.script,
         })
 
     async def generate_pixel_data(self, input_data: PixelInput) -> str:

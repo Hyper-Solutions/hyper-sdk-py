@@ -1,15 +1,17 @@
 class KasadaPowInput:
-    def __init__(self, st: int, ct: str, domain: str, work_time: int = None):
+    def __init__(self, st: int, ct: str, fc: str, domain: str, work_time: int = None):
         # St is the x-kpsdk-st value returned by the /tl POST request
         self.st = st
         # Ct is the x-kpsdk-ct value returned by the /tl POST request
         self.ct = ct
+        # fc is the x-kpsdk-fc value returned by the /mfc GET request, if used by the site
+        self.fc = fc
         # WorkTime can be used to pre-generate POW strings
         self.work_time = work_time
         self.domain = domain
 
     def to_dict(self):
-        result = {"st": self.st, "ct": self.ct, "domain": self.domain}
+        result = {"st": self.st, "ct": self.ct, "fc": self.fc, "domain": self.domain}
         if self.work_time is not None:
             result["workTime"] = self.work_time
         return result
