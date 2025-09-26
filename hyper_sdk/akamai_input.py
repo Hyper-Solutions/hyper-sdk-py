@@ -1,12 +1,13 @@
 class SensorInput:
     def __init__(self, abck: str, bmsz: str, version: str, page_url: str, user_agent: str, ip: str, acceptLanguage: str,
-                 context: str, script: str):
+                 context: str, script: str, scriptUrl: str):
         self.abck = abck
         self.bmsz = bmsz
         self.version = version
         self.page_url = page_url
         self.user_agent = user_agent
         self.script = script
+        self.scriptUrl = scriptUrl
         self.context = context
         self.ip = ip
         self.acceptLanguage = acceptLanguage
