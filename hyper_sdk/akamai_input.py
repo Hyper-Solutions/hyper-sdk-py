@@ -7,10 +7,10 @@ class SensorInput:
         self.page_url = page_url
         self.user_agent = user_agent
         self.script = script
-        self.scriptUrl = scriptUrl
         self.context = context
         self.ip = ip
         self.acceptLanguage = acceptLanguage
+        self.scriptUrl = scriptUrl
 
 
 class PixelInput:

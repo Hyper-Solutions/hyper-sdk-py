@@ -64,10 +64,10 @@ class Session:
             'version': input_data.version,
             'pageUrl': input_data.page_url,
             'script': input_data.script,
-            'scriptUrl': input_data.scriptUrl,
             'context': input_data.context,
             'ip': input_data.ip,
             'acceptLanguage': input_data.acceptLanguage,
+            'scriptUrl': input_data.scriptUrl,
         }
         payload = json.dumps(payload_data).encode('utf-8')
 
