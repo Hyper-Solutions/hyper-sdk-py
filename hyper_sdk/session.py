@@ -126,14 +126,13 @@ class Session:
             'acceptLanguage': input_data.acceptLanguage,
         })
 
-    def generate_reese84_sensor(self, site: str, input_data: ReeseInput) -> str:
+    def generate_reese84_sensor(self, input_data: ReeseInput) -> str:
         """
         Returns the sensor data required to generate valid reese84 cookies using the Hyper Solutions API.
 
         This function sends a request to the specified sensor endpoint with the necessary data to generate the reese84 sensor data.
 
         Args:
-            site (str): The name of the site that will be used to generate the sensor data.
             input_data (ReeseInput): The input data.
 
         Returns:
@@ -142,7 +141,7 @@ class Session:
         Raises:
             ValueError: If the script attribute in input_data is empty.
         """
-        return self._send_request("https://incapsula.hypersolutions.co/reese84/" + quote(site), {
+        return self._send_request("https://incapsula.hypersolutions.co/reese84", {
             'userAgent': input_data.user_agent,
             'acceptLanguage': input_data.acceptLanguage,
             'ip': input_data.ip,
