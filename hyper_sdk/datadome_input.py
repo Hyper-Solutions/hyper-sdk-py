@@ -1,6 +1,6 @@
 
 class DataDomeSliderInput:
-    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, parent_url: str, acceptLanguage: str, ip: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, parent_url: str, accept_language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -22,7 +22,7 @@ class DataDomeSliderInput:
         self.piece = piece
 
         self.parent_url = parent_url
-        self.acceptLanguage = acceptLanguage
+        self.accept_language = accept_language
         self.ip = ip
 
     def to_dict(self):
@@ -33,13 +33,13 @@ class DataDomeSliderInput:
             "puzzle": self.puzzle,
             "piece": self.piece,
             "parentUrl": self.parent_url,
-            "acceptLanguage": self.acceptLanguage,
+            "acceptLanguage": self.accept_language,
             "ip": self.ip,
         }
 
 
 class DataDomeInterstitialInput:
-    def __init__(self, user_agent: str, device_link: str, html: str, acceptLanguage: str, ip: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, accept_language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -50,7 +50,7 @@ class DataDomeInterstitialInput:
         # Html is the response body of the GET request to the DeviceLink
         self.html = html
 
-        self.acceptLanguage = acceptLanguage
+        self.accept_language = accept_language
         self.ip = ip
 
     def to_dict(self):
@@ -58,31 +58,32 @@ class DataDomeInterstitialInput:
             "userAgent": self.user_agent,
             "deviceLink": self.device_link,
             "html": self.html,
-            "acceptLanguage": self.acceptLanguage,
+            "acceptLanguage": self.accept_language,
             "ip": self.ip,
         }
 
 
 class DataDomeTagsInput:
-    def __init__(self, user_agent: str, cid: str, ddk: str, referer: str, tags_type: str, version: str, acceptLanguage: str, ip: str):
-        # UserAgent must be a Chrome Windows User-Agent.
+    def __init__(self, user_agent: str, ddk: str, referer: str, tags_type: str, version: str, accept_language: str, ip: str, cid: str = ""):
         self.user_agent = user_agent
         self.cid = cid
         self.ddk = ddk
         self.referer = referer
         self.tags_type = tags_type
         self.version = version
-        self.acceptLanguage = acceptLanguage
+        self.accept_language = accept_language
         self.ip = ip
 
     def to_dict(self):
-        return {
+        data = {
             "userAgent": self.user_agent,
-            "cid": self.cid,
             "ddk": self.ddk,
             "referer": self.referer,
             "type": self.tags_type,
-            "acceptLanguage": self.acceptLanguage,
+            "acceptLanguage": self.accept_language,
             "ip": self.ip,
             "version": self.version,
         }
+        if self.cid:  # Only include cid if it's not empty
+            data["cid"] = self.cid
+        return data

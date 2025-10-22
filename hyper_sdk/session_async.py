@@ -68,10 +68,10 @@ class SessionAsync:
             'version': input_data.version,
             'pageUrl': input_data.page_url,
             'script': input_data.script,
-            'scriptUrl': input_data.scriptUrl,
+            'scriptUrl': input_data.script_url,
             'context': input_data.context,
             'ip': input_data.ip,
-            'acceptLanguage': input_data.acceptLanguage,
+            'acceptLanguage': input_data.accept_language,
         }
         payload = json.dumps(payload_data).encode('utf-8')
 
@@ -106,7 +106,7 @@ class SessionAsync:
             'pageUrl': input_data.page_url,
             'o': input_data.o_cookie,
             'script': input_data.script,
-            'acceptLanguage': input_data.acceptLanguage,
+            'acceptLanguage': input_data.accept_language,
             'ip': input_data.ip,
             'index': input_data.index,
         })
@@ -127,7 +127,7 @@ class SessionAsync:
             'htmlVar': input_data.html_var,
             'scriptVar': input_data.script_var,
             'ip': input_data.ip,
-            'acceptLanguage': input_data.acceptLanguage,
+            'acceptLanguage': input_data.accept_language,
         })
 
     async def generate_reese84_sensor(self, input_data: ReeseInput) -> str:
@@ -147,9 +147,9 @@ class SessionAsync:
         """
         return await self._send_request("https://incapsula.hypersolutions.co/reese84", {
             'userAgent': input_data.user_agent,
-            'acceptLanguage': input_data.acceptLanguage,
+            'acceptLanguage': input_data.accept_language,
             'ip': input_data.ip,
-            'scriptUrl': input_data.scriptUrl,
+            'scriptUrl': input_data.script_url,
             'pageUrl': input_data.pageUrl,
             'pow': input_data.pow,
             'script': input_data.script,

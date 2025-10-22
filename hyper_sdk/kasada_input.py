@@ -1,5 +1,5 @@
 class KasadaPowInput:
-    def __init__(self, st: int, ct: str, fc: str, domain: str, work_time: int = None):
+    def __init__(self, st: int, ct: str, domain: str, fc: str = "", work_time: int = None):
         # St is the x-kpsdk-st value returned by the /tl POST request
         self.st = st
         # Ct is the x-kpsdk-ct value returned by the /tl POST request
@@ -11,14 +11,16 @@ class KasadaPowInput:
         self.domain = domain
 
     def to_dict(self):
-        result = {"st": self.st, "ct": self.ct, "fc": self.fc, "domain": self.domain}
+        result = {"st": self.st, "ct": self.ct, "domain": self.domain}
+        if self.fc:  # Only include fc if it's not empty
+            result["fc"] = self.fc
         if self.work_time is not None:
             result["workTime"] = self.work_time
         return result
 
 
 class KasadaPayloadInput:
-    def __init__(self, user_agent: str, ips_link: str, script: str, acceptLanguage: str, ip: str):
+    def __init__(self, user_agent: str, ips_link: str, script: str, accept_language: str, ip: str):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -29,7 +31,7 @@ class KasadaPayloadInput:
         self.script = script
 
         # Your accept-language header
-        self.acceptLanguage = acceptLanguage
+        self.accept_language = accept_language
         self.ip = ip
 
     def to_dict(self):
@@ -37,7 +39,7 @@ class KasadaPayloadInput:
             "userAgent": self.user_agent,
             "ipsLink": self.ips_link,
             "script": self.script,
-            "acceptLanguage": self.acceptLanguage,
+            "acceptLanguage": self.accept_language,
             "ip": self.ip,
         }
         return result
