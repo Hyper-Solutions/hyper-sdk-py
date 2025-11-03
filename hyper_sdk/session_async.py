@@ -1,10 +1,9 @@
 """Async version of the Session class for Hyper Solutions API."""
 
 from typing import Optional, Dict, Any, Tuple
-from urllib.parse import quote
 import httpx
 import json
-import zstandard as zstd
+import gzip
 
 from .shared import generate_signature, build_headers, validate_response
 from .akamai_input import SensorInput, PixelInput, SbsdInput
@@ -24,12 +23,7 @@ class SessionAsync:
         self.app_secret = app_secret
         self.client = client
         self._owns_client = client is None
-        self.compression = compression and zstd is not None
-
-        # Initialize zstd compressor and decompressor if available
-        if self.compression:
-            self._compressor = zstd.ZstdCompressor(level=3)
-            self._decompressor = zstd.ZstdDecompressor()
+        self.compression = compression
 
     async def __aenter__(self):
         if self._owns_client:
@@ -78,7 +72,7 @@ class SessionAsync:
         # Compress payload if large enough
         payload, use_compression = self._compress_payload(payload)
         if use_compression:
-            headers["content-encoding"] = "zstd"
+            headers["content-encoding"] = "gzip"
 
         response = await self.client.post(sensor_endpoint, headers=headers, content=payload)
 
@@ -184,7 +178,7 @@ class SessionAsync:
         # Compress payload if large enough
         payload, use_compression = self._compress_payload(payload)
         if use_compression:
-            headers["content-encoding"] = "zstd"
+            headers["content-encoding"] = "gzip"
 
         response = await self.client.post("https://incapsula.hypersolutions.co/utmvc", headers=headers, content=payload)
 
@@ -227,7 +221,7 @@ class SessionAsync:
         # Compress payload if large enough
         payload, use_compression = self._compress_payload(payload)
         if use_compression:
-            headers["content-encoding"] = "zstd"
+            headers["content-encoding"] = "gzip"
 
         response = await self.client.post("https://kasada.hypersolutions.co/payload", headers=headers, content=payload)
 
@@ -309,7 +303,7 @@ class SessionAsync:
         # Compress payload if large enough
         payload, use_compression = self._compress_payload(payload)
         if use_compression:
-            headers["content-encoding"] = "zstd"
+            headers["content-encoding"] = "gzip"
 
         response = await self.client.post("https://trustdecision.hypersolutions.co/payload", headers=headers, content=payload)
 
@@ -375,12 +369,12 @@ class SessionAsync:
         headers = build_headers(self.api_key, self.jwt_key, self.app_key, self.app_secret)
         # Add compression headers
         if self.compression:
-            headers["accept-encoding"] = "zstd"
+            headers["accept-encoding"] = "gzip"
         return headers
 
     def _compress_payload(self, payload: bytes) -> Tuple[bytes, bool]:
         """
-        Compresses the payload using zstd if enabled and payload is large enough.
+        Compresses the payload using gzip if enabled and payload is large enough.
 
         Args:
             payload (bytes): The payload to potentially compress
@@ -392,7 +386,7 @@ class SessionAsync:
             return payload, False
 
         try:
-            compressed = self._compressor.compress(payload)
+            compressed = gzip.compress(payload, compresslevel=6)
             return compressed, True
         except Exception:
             # Fall back to uncompressed if compression fails
@@ -400,7 +394,7 @@ class SessionAsync:
 
     def _decompress_response(self, response: httpx.Response) -> bytes:
         """
-        Decompresses the response body if it's compressed with zstd.
+        Decompresses the response body if it's compressed with gzip.
 
         Args:
             response (httpx.Response): The HTTP response
@@ -411,9 +405,9 @@ class SessionAsync:
         content = response.content
         content_encoding = response.headers.get("content-encoding", "").lower()
 
-        if content_encoding == "zstd" and self.compression:
+        if content_encoding == "gzip" and self.compression:
             try:
-                return self._decompressor.decompress(content)
+                return gzip.decompress(content)
             except Exception:
                 # Fall back to original content if decompression fails
                 pass
@@ -438,7 +432,7 @@ class SessionAsync:
         # Compress payload if large enough
         payload, use_compression = self._compress_payload(payload)
         if use_compression:
-            headers["content-encoding"] = "zstd"
+            headers["content-encoding"] = "gzip"
 
         response = await self.client.post(url, headers=headers, content=payload)
 
@@ -466,7 +460,7 @@ class SessionAsync:
         # Compress payload if large enough
         payload, use_compression = self._compress_payload(payload)
         if use_compression:
-            headers["content-encoding"] = "zstd"
+            headers["content-encoding"] = "gzip"
 
         response = await self.client.post(url, headers=headers, content=payload)
 
