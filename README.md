@@ -237,6 +237,31 @@ pow_payload = session.generate_kasada_pow(KasadaPowInput(
 ))
 ```
 
+## 🤖 Vercel BotID
+
+Bypass **Vercel BotID** protection by generating the required `x-is-human` header.
+
+### Generating the x-is-human Header
+
+Create the **x-is-human header** for Vercel BotID bypass:
+
+```python
+from hyper_sdk import BotIDHeaderInput
+
+header = session.generate_botid_header(BotIDHeaderInput(
+    script=script_body,          # The c.js script content
+    user_agent="your-user-agent",
+    ip="your-proxy-ip",
+    accept_language="en-US,en;q=0.9",
+))
+
+# Use the header in your requests
+headers = {
+    "x-is-human": header,
+    # ... other headers
+}
+```
+
 ### Script Path Extraction
 
 Extract **Kasada script paths** from blocked pages (HTTP 429):

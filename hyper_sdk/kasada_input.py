@@ -43,3 +43,25 @@ class KasadaPayloadInput:
             "ip": self.ip,
         }
         return result
+
+class BotIDHeaderInput:
+    def __init__(self, script: str, user_agent: str, ip: str, accept_language: str):
+        # Script is the c.js script retrieved from the BotID script endpoint
+        self.script = script
+
+        # UserAgent must be a Chrome Windows User-Agent.
+        self.user_agent = user_agent
+
+        # IP is the IPV4 address of your network or proxy
+        self.ip = ip
+
+        # Your accept-language header
+        self.accept_language = accept_language
+
+    def to_dict(self):
+        return {
+            "script": self.script,
+            "userAgent": self.user_agent,
+            "ip": self.ip,
+            "acceptLanguage": self.accept_language,
+        }

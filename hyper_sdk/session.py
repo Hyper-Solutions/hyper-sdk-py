@@ -7,7 +7,7 @@ import gzip
 
 from .shared import generate_signature, build_headers, validate_response
 from .akamai_input import SensorInput, PixelInput, SbsdInput
-from .kasada_input import KasadaPowInput, KasadaPayloadInput
+from .kasada_input import KasadaPowInput, KasadaPayloadInput, BotIDHeaderInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
 from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
@@ -225,6 +225,19 @@ class Session:
         validate_response(response_data, response.status_code)
 
         return response_data["payload"], response_data["headers"]
+
+    def generate_botid_header(self, input_data: BotIDHeaderInput) -> str:
+        """
+        Returns the x-is-human header value for Vercel BotID using the Hyper Solutions API.
+
+        Args:
+            input_data (BotIDHeaderInput): An instance of BotIDHeaderInput containing the script,
+                user agent, IP, and accept language.
+
+        Returns:
+            str: The x-is-human header value as a string.
+        """
+        return self._send_request("https://kasada.hypersolutions.co/botid", input_data.to_dict())
 
     def generate_interstitial_payload(self, input_data: DataDomeInterstitialInput) -> Dict[str, Any]:
         """
