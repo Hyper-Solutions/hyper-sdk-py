@@ -76,6 +76,7 @@ def parse_interstitial_device_check_link(src: str, datadome_cookie: str, referer
         "cid": datadome_cookie,
         "referer": referer,
         "s": str(dd_object_parsed.get("s")),
+        "e": str(dd_object_parsed.get("e")),
         "b": str(dd_object_parsed.get("b")),
         "dm": "cd",
     }
