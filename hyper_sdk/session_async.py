@@ -27,7 +27,7 @@ class SessionAsync:
 
     async def __aenter__(self):
         if self._owns_client:
-            self.client = httpx.AsyncClient(http2=True)
+            self.client = httpx.AsyncClient(http2=True, timeout=httpx.Timeout(30.0))
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -37,7 +37,7 @@ class SessionAsync:
     async def ensure_client(self):
         """Ensure we have an active client session."""
         if self.client is None:
-            self.client = httpx.AsyncClient(http2=True)
+            self.client = httpx.AsyncClient(http2=True, timeout=httpx.Timeout(30.0))
             self._owns_client = True
 
     async def generate_sensor_data(self, input_data: SensorInput) -> Tuple[str, str]:

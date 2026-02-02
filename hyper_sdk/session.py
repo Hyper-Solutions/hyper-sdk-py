@@ -21,7 +21,7 @@ class Session:
         self.jwt_key = jwt_key
         self.app_key = app_key
         self.app_secret = app_secret
-        self.client = httpx.Client() if client is None else client
+        self.client = httpx.Client(timeout=httpx.Timeout(30.0)) if client is None else client
         self._owns_client = client is None
         self.compression = compression
 
