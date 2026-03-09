@@ -5,7 +5,7 @@ script_path_expr = re.compile(r'<script type="text/javascript"\s+(?:nonce=".*?")
                               re.IGNORECASE)
 
 
-def parse_script_path(src: str) -> str:
+def parse_akamai_script_path(src: str) -> str:
     """
         Gets the Akamai Bot Manager web SDK path from the given HTML code src.
 

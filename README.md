@@ -267,9 +267,9 @@ headers = {
 Extract **Kasada script paths** from blocked pages (HTTP 429):
 
 ```python
-from hyper_sdk.kasada import parse_script_path
+from hyper_sdk.kasada import parse_kasada_script_path
 
-script_path = parse_script_path(blocked_page_html)
+script_path = parse_kasada_script_path(blocked_page_html)
 # Returns: /ips.js?timestamp=...
 ```
 

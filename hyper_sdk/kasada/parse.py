@@ -4,9 +4,9 @@ import re
 script_path_expr = re.compile(r'<script\s+src="([^"]+)"')
 
 
-def parse_script_path(src: str) -> str:
+def parse_kasada_script_path(src: str) -> str:
     """
-        Gets the Akamai Bot Manager web SDK path from the given HTML code src.
+        Gets the Kasada script path from the given HTML code src.
 
         This function searches the provided HTML source code for the path of a JavaScript script tag that matches the
         specified regular expression pattern.
