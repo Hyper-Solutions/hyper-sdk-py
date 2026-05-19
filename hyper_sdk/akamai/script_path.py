@@ -25,4 +25,4 @@ def parse_akamai_script_path(src: str) -> str:
     if match:
         return match.group(1)
     else:
-        raise "hyper-sdk: script path not found"
+        raise Exception("hyper-sdk: script path not found")
