@@ -2,7 +2,7 @@ import re
 from urllib.parse import urlparse
 
 # Precompiled regular expressions
-reese_script_regex = re.compile(r'src\s*=\s*"((/[^/]+/\d+)(?:\?.*)?)"')
+reese_script_regex = re.compile(r'src\s*=\s*"((/[^/]+/[^/?"]+)\?s=[^"]*)"')
 
 
 def parse_dynamic_reese_script(html_content: str, url_str: str) -> tuple[str, str]:
