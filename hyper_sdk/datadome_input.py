@@ -1,6 +1,6 @@
 
 class DataDomeSliderInput:
-    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, parent_url: str, accept_language: str, ip: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, puzzle: str, piece: str, parent_url: str, accept_language: str, ip: str, script: str = ""):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -22,11 +22,21 @@ class DataDomeSliderInput:
         self.piece = piece
 
         self.parent_url = parent_url
+
+        # Script is the DataDome challenge bundle. It is only needed when the
+        # challenge page loads the bundle with a <script defer src="..."> tag
+        # instead of inlining it, which DataDome does per request. Use
+        # hyper_sdk.datadome.parse_challenge_script_url on the html to find out,
+        # then GET that URL with the same client and pass the response body here.
+        #
+        # Leave it empty when the page inlines the bundle.
+        self.script = script
+
         self.accept_language = accept_language
         self.ip = ip
 
     def to_dict(self):
-        return {
+        data = {
             "userAgent": self.user_agent,
             "deviceLink": self.device_link,
             "html": self.html,
@@ -36,10 +46,13 @@ class DataDomeSliderInput:
             "acceptLanguage": self.accept_language,
             "ip": self.ip,
         }
+        if self.script:  # Only include script if it's not empty
+            data["script"] = self.script
+        return data
 
 
 class DataDomeInterstitialInput:
-    def __init__(self, user_agent: str, device_link: str, html: str, accept_language: str, ip: str):
+    def __init__(self, user_agent: str, device_link: str, html: str, accept_language: str, ip: str, script: str = ""):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -50,17 +63,29 @@ class DataDomeInterstitialInput:
         # Html is the response body of the GET request to the DeviceLink
         self.html = html
 
+        # Script is the DataDome challenge bundle. It is only needed when the
+        # challenge page loads the bundle with a <script defer src="..."> tag
+        # instead of inlining it, which DataDome does per request. Use
+        # hyper_sdk.datadome.parse_challenge_script_url on the html to find out,
+        # then GET that URL with the same client and pass the response body here.
+        #
+        # Leave it empty when the page inlines the bundle.
+        self.script = script
+
         self.accept_language = accept_language
         self.ip = ip
 
     def to_dict(self):
-        return {
+        data = {
             "userAgent": self.user_agent,
             "deviceLink": self.device_link,
             "html": self.html,
             "acceptLanguage": self.accept_language,
             "ip": self.ip,
         }
+        if self.script:  # Only include script if it's not empty
+            data["script"] = self.script
+        return data
 
 
 class DataDomeTagsInput:

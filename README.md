@@ -343,6 +343,34 @@ device_link = parse_slider_device_check_link(
 )
 ```
 
+### Challenge Script
+
+DataDome sometimes serves a challenge page with the **challenge script in its own file** instead of inlining it in the page:
+
+```html
+<script defer src="https://ct.captcha-delivery.com/interstitial.1.33.0.202609141.js"></script>
+```
+
+It switches between the two forms per request, so check every challenge page. When the page uses a separate file, fetch it with your own client so the request keeps your proxy, TLS fingerprint and headers, then pass the body as `script`:
+
+```python
+from hyper_sdk import DataDomeInterstitialInput
+from hyper_sdk.datadome import parse_challenge_script_url
+
+script = ""
+script_url = parse_challenge_script_url(html_content)
+if script_url is not None:
+    script = your_client.get(script_url).text
+
+result = session.generate_interstitial_payload(DataDomeInterstitialInput(
+    # other interstitial input fields
+    html=html_content,
+    script=script,  # empty when the page inlines the script
+))
+```
+
+The same applies to `DataDomeSliderInput`. One helper covers both challenge types, since the captcha page uses the same tag. `script` is optional and leaving it empty keeps working.
+
 ## 📖 Documentation
 
 For detailed documentation on how to use the SDK, including examples and API reference, please visit our documentation website:
