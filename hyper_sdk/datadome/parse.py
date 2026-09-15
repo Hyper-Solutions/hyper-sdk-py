@@ -1,5 +1,15 @@
 import json
+import re
+from typing import Optional
 from urllib.parse import urlencode
+
+# Matches the tag a challenge page uses to load the bundle from
+# ct.captcha-delivery.com, capturing the URL. The name in front of the version
+# is left open so it keeps matching whatever DataDome calls the bundle, e.g.
+# interstitial.1.33.0.202609141.js or captcha.1.34.0.202609141.js.
+_CHALLENGE_SCRIPT_REGEX = re.compile(
+    r"""<script[^>]+src\s*=\s*["']([^"']*/[a-z_-]+\.\d+\.\d+\.\d+\.[^"']*\.js)["']"""
+)
 
 
 def parse_slider_device_check_link(src: str, datadome_cookie: str, referer: str) -> str:
@@ -82,3 +92,49 @@ def parse_interstitial_device_check_link(src: str, datadome_cookie: str, referer
     }
 
     return f"https://geo.captcha-delivery.com/interstitial/?{urlencode(params)}"
+
+
+def parse_challenge_script_url(html: str) -> Optional[str]:
+    """
+        Return the challenge bundle URL a device check or captcha page loads with a
+        <script defer src="..."> tag, or None when the page has no such tag.
+
+        DataDome serves some challenge pages with the bundle inlined in the HTML and
+        others with it in its own file, switching between the two per request, so this
+        has to be checked on every challenge rather than configured once.
+
+        When it returns a URL, GET that URL with the same client, proxy and headers you
+        used for the challenge page, and pass the response body as the `script` field of
+        DataDomeInterstitialInput or DataDomeSliderInput. When it returns None the
+        bundle is already in the HTML and `script` stays empty.
+
+        Args:
+            html (str): The response body of the GET request to the device check link.
+
+        Returns:
+            Optional[str]: The challenge bundle URL, or None when the page inlines it.
+
+        Example:
+            device_link = parse_interstitial_device_check_link(body, cookie, referer)
+            # ... GET device_link with your own client, read the body into html ...
+
+            script = ""
+            script_url = parse_challenge_script_url(html)
+            if script_url is not None:
+                # fetch script_url with your own client, read the body into script
+                script = your_client.get(script_url).text
+
+            result = session.generate_interstitial_payload(DataDomeInterstitialInput(
+                user_agent=user_agent,
+                device_link=device_link,
+                html=html,
+                accept_language=accept_language,
+                ip=ip,
+                script=script,
+            ))
+    """
+    match = _CHALLENGE_SCRIPT_REGEX.search(html)
+    if match is None:
+        return None
+
+    return match.group(1)
