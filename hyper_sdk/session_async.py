@@ -83,7 +83,7 @@ class SessionAsync:
 
         return response_data["payload"], response_data.get("context", "")
 
-    async def generate_sbsd_data(self, input_data: SbsdInput) -> str:
+    async def generate_sbsd_data(self, input_data: SbsdInput) -> Tuple[str, str]:
         """
         Returns the sbsd data required to solve SBSD using the Hyper Solutions API.
 
@@ -91,10 +91,11 @@ class SessionAsync:
             input_data (SbsdInput): An instance of SbsdInput containing the necessary data for generating the sbsd data.
 
         Returns:
-            str: Sensor data as a string.
+            str: Sbsd data as a string.
+            str: Context data as a string.
         """
         sensor_endpoint = "https://akm.hypersolutions.co/sbsd"
-        return await self._send_request(sensor_endpoint, {
+        return await self._send_request_with_context(sensor_endpoint, {
             'userAgent': input_data.user_agent,
             'uuid': input_data.uuid,
             'pageUrl': input_data.page_url,
@@ -103,6 +104,7 @@ class SessionAsync:
             'acceptLanguage': input_data.accept_language,
             'ip': input_data.ip,
             'index': input_data.index,
+            'context': input_data.context,
         })
 
     async def generate_pixel_data(self, input_data: PixelInput) -> str:
@@ -454,6 +456,35 @@ class SessionAsync:
         response_data = json.loads(response_content)
         validate_response(response_data, response.status_code)
         return response_data["payload"]
+
+    async def _send_request_with_context(self, url: str, input_data: Dict[str, Any]) -> Tuple[str, str]:
+        """
+        Sends a request and returns the payload with the context.
+
+        Args:
+            url (str): The endpoint URL
+            input_data (Dict[str, Any]): The request data
+
+        Returns:
+            str: The response payload
+            str: The response context
+        """
+        await self.ensure_client()
+        headers = self._build_headers()
+        payload = json.dumps(input_data).encode('utf-8')
+
+        # Compress payload if large enough
+        payload, use_compression = self._compress_payload(payload)
+        if use_compression:
+            headers["content-encoding"] = "gzip"
+
+        response = await self.client.post(url, headers=headers, content=payload)
+
+        # Decompress response if needed
+        response_content = self._decompress_response(response)
+        response_data = json.loads(response_content)
+        validate_response(response_data, response.status_code)
+        return response_data["payload"], response_data.get("context", "")
 
     async def _send_request_with_headers(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
