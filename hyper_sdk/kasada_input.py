@@ -20,7 +20,8 @@ class KasadaPowInput:
 
 
 class KasadaPayloadInput:
-    def __init__(self, user_agent: str, ips_link: str, script: str, accept_language: str, ip: str):
+    def __init__(self, user_agent: str, ips_link: str, script: str, accept_language: str, ip: str,
+                 strict: bool = False):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -34,6 +35,12 @@ class KasadaPayloadInput:
         self.accept_language = accept_language
         self.ip = ip
 
+        # Strict refuses the payload instead of returning one built on a guess when
+        # the script has a signal the API cannot identify yet. The request then fails
+        # with "Unidentified signals in script; refusing payload because strict was
+        # set". Off by default: such a payload usually still works.
+        self.strict = strict
+
     def to_dict(self):
         result = {
             "userAgent": self.user_agent,
@@ -42,6 +49,8 @@ class KasadaPayloadInput:
             "acceptLanguage": self.accept_language,
             "ip": self.ip,
         }
+        if self.strict:
+            result["strict"] = True
         return result
 
 class BotIDHeaderInput:

@@ -24,7 +24,7 @@ class PixelInput:
 
 class SbsdInput:
     def __init__(self, index: int, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str,
-                 accept_language: str, ip: str, context: str = ""):
+                 accept_language: str, ip: str, context: str = "", script_url: str = ""):
         self.index = index
         self.user_agent = user_agent
         self.uuid = uuid
@@ -36,3 +36,7 @@ class SbsdInput:
         self.accept_language = accept_language
         self.ip = ip
         self.context = context
+        # script_url is the absolute src of the SBSD script tag, query included.
+        # Optional: when set, the fingerprint's resource-timing signal carries the
+        # script's own entry the way a browser's does.
+        self.script_url = script_url

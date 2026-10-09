@@ -30,13 +30,26 @@ from hyper_sdk import Session, SensorInput
 session = Session("your-api-key")
 
 # Generate Akamai sensor data
-sensor_data, sensor_context = session.generate_sensor_data(SensorInput(
+result = session.generate_sensor_data(SensorInput(
     # sensor input fields
 ))
 
-print(f"Generated sensor data: {sensor_data}")
-print(f"Sensor context: {sensor_context}")
+print(f"Generated sensor data: {result.payload}")
+print(f"Sensor context: {result.context}")
 ```
+
+Every `generate_*` method returns a result object (`SensorResult`, `SbsdResult`, ...), so fields the API adds later arrive without breaking your code.
+
+### Client hints (Accept-CH)
+
+Sensor, SBSD, Reese84, Kasada payload and DataDome results carry `client_hints`: the `sec-ch-*`, `device-memory`, `dpr`, `viewport-width`, `ect`, `rtt` and `downlink` headers for the device the payload was generated for, keyed by lowercase header name and ready to send verbatim. Send only the ones the site asked for in its `Accept-CH` response header:
+
+```python
+requested = [h.strip().lower() for h in response.headers.get("accept-ch", "").split(",") if h.strip()]
+hints = {name: result.client_hints[name] for name in requested if result.client_hints and name in result.client_hints}
+```
+
+`client_hints` is `None` when the API returns none (Safari user agents, and payloads built by a remote browser).
 
 ## ✨ Features
 
@@ -99,9 +112,25 @@ Bypass **Akamai Bot Manager** protection with sensor data generation, cookie val
 Generate sensor data for valid **Akamai cookies** and bot detection bypass:
 
 ```python
-sensor_data, context = await session.generate_sensor_data({
+result = await session.generate_sensor_data(SensorInput(
     # Configure sensor parameters
-})
+))
+# result.payload is the sensor data, result.context goes into the next SensorInput
+```
+
+### SBSD
+
+Generate **SBSD** payloads. The first request of a session sends the script, later ones send the returned context:
+
+```python
+from hyper_sdk import SbsdInput
+
+result = session.generate_sbsd_data(SbsdInput(
+    # other sbsd input fields
+    script=script,
+    script_url=script_url,  # optional: absolute src of the SBSD script tag, query included
+))
+# POST result.payload; pass result.context in the next SbsdInput instead of script
 ```
 
 ### Handling Sec-Cpt Challenges
@@ -152,9 +181,10 @@ script_url, post_url = parse_pixel_script_url(html_content)
 script_var = parse_pixel_script_var(script_content)
 
 # Generate pixel data
-pixel_data = session.generate_pixel_data(PixelInput(
+result = session.generate_pixel_data(PixelInput(
     # pixel input fields
 ))
+# result.payload is the pixel data
 ```
 
 ## 🔒 Incapsula Protection
@@ -168,9 +198,10 @@ Create **Reese84 sensor data** for Incapsula bypass:
 ```python
 from hyper_sdk import ReeseInput
 
-sensor_data = session.generate_reese84_sensor("example.com", ReeseInput(
+result = session.generate_reese84_sensor(ReeseInput(
     # reese input fields
 ))
+# result.payload is the sensor, result.client_hints the Accept-CH headers
 ```
 
 ### UTMVC Cookie Generation
@@ -180,9 +211,10 @@ Generate **UTMVC cookies** for Incapsula protection bypass:
 ```python
 from hyper_sdk import UtmvcInput
 
-utmvc_cookie, swhanedl = session.generate_utmvc_cookie(UtmvcInput(
+result = session.generate_utmvc_cookie(UtmvcInput(
     # utmvc input fields
 ))
+# result.payload is the ___utmvc cookie, result.swhanedl the swhanedl value
 ```
 
 ### Script Path Parsing
@@ -220,9 +252,13 @@ Create **x-kpsdk-ct tokens** for Kasada bypass:
 ```python
 from hyper_sdk import KasadaPayloadInput
 
-payload, headers = session.generate_kasada_payload(KasadaPayloadInput(
+result = session.generate_kasada_payload(KasadaPayloadInput(
     # kasada payload input fields
+    # strict=True refuses a payload built on a signal the API cannot identify
+    # yet, instead of returning one built on a guess. Optional, off by default.
 ))
+# POST the base64-decoded result.payload to /tl with the x-kpsdk-* values in result.headers.
+# result.client_hints are the Accept-CH headers: send only the ones the site asked for.
 ```
 
 ### Generating POW Data (CD)
@@ -232,9 +268,10 @@ Solve **Kasada Proof-of-Work** challenges for x-kpsdk-cd tokens:
 ```python
 from hyper_sdk import KasadaPowInput
 
-pow_payload = session.generate_kasada_pow(KasadaPowInput(
+result = session.generate_kasada_pow(KasadaPowInput(
     # kasada pow input fields
 ))
+# result.payload is the x-kpsdk-cd value
 ```
 
 ## 🤖 Vercel BotID
@@ -248,7 +285,7 @@ Create the **x-is-human header** for Vercel BotID bypass:
 ```python
 from hyper_sdk import BotIDHeaderInput
 
-header = session.generate_botid_header(BotIDHeaderInput(
+result = session.generate_botid_header(BotIDHeaderInput(
     script=script_body,          # The c.js script content
     user_agent="your-user-agent",
     ip="your-proxy-ip",
@@ -257,7 +294,7 @@ header = session.generate_botid_header(BotIDHeaderInput(
 
 # Use the header in your requests
 headers = {
-    "x-is-human": header,
+    "x-is-human": result.payload,
     # ... other headers
 }
 ```
@@ -288,9 +325,8 @@ result = session.generate_interstitial_payload(DataDomeInterstitialInput(
     # interstitial input fields
 ))
 
-payload = result["payload"]
-headers = result["headers"]
-# POST payload to https://geo.captcha-delivery.com/interstitial/
+# POST result.payload to https://geo.captcha-delivery.com/interstitial/
+# result.client_hints are the Accept-CH headers for the device
 ```
 
 ### Slider Captcha Solving
@@ -304,9 +340,8 @@ result = session.generate_slider_payload(DataDomeSliderInput(
     # slider input fields
 ))
 
-check_url = result["payload"]
-headers = result["headers"]
-# GET request to check_url
+# GET request to result.payload (the check URL)
+# result.client_hints are the Accept-CH headers for the device
 ```
 
 ### Tags Payload Generation
@@ -316,9 +351,10 @@ Generate **DataDome tags payload**:
 ```python
 from hyper_sdk import DataDomeTagsInput
 
-tags_payload = session.generate_tags_payload(DataDomeTagsInput(
+result = session.generate_tags_payload(DataDomeTagsInput(
     # tags input fields
 ))
+# result.payload is the tags payload
 ```
 
 ### DeviceLink URL Parsing
