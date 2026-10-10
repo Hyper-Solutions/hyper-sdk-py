@@ -23,15 +23,16 @@ class PixelInput:
 
 
 class SbsdInput:
-    def __init__(self, index: int, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str,
+    def __init__(self, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str,
                  accept_language: str, ip: str, context: str = "", script_url: str = ""):
-        self.index = index
         self.user_agent = user_agent
         self.uuid = uuid
         self.page_url = page_url
         self.o_cookie = o_cookie
         # script is mutually exclusive with context. The first sbsd request should
-        # include script; subsequent requests should only include context.
+        # include script; subsequent requests should only include context. A hard
+        # block (an sbsd POST with a t parameter) always sends script and an empty
+        # context, never the context from an earlier request.
         self.script = script
         self.accept_language = accept_language
         self.ip = ip

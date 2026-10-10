@@ -120,7 +120,7 @@ result = await session.generate_sensor_data(SensorInput(
 
 ### SBSD
 
-Generate **SBSD** payloads. The first request of a session sends the script, later ones send the returned context:
+Generate **SBSD** payloads. The first request of a session sends the script, later ones send the returned context. A hard block (an SBSD POST with a `t` parameter) always sends the script with an empty context, never one from an earlier request:
 
 ```python
 from hyper_sdk import SbsdInput

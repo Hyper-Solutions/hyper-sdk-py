@@ -31,7 +31,6 @@ def sbsd_payload(input_data: SbsdInput) -> Dict[str, Any]:
         'script': input_data.script,
         'acceptLanguage': input_data.accept_language,
         'ip': input_data.ip,
-        'index': input_data.index,
         'context': input_data.context,
     }
     if input_data.script_url:

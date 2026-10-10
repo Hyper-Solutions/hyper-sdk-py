@@ -41,7 +41,7 @@ def sensor_input():
 
 
 def sbsd_input(script_url=""):
-    return SbsdInput(index=0, user_agent="", uuid="", page_url="", o_cookie="", script="",
+    return SbsdInput(user_agent="", uuid="", page_url="", o_cookie="", script="",
                      accept_language="", ip="", script_url=script_url)
 
 
