@@ -11,6 +11,13 @@ from .kasada_input import KasadaPowInput, KasadaPayloadInput, BotIDHeaderInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
 from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
+from .results import (
+    SensorResult, PixelResult, SbsdResult, Reese84Result, UtmvcResult, KasadaPayloadResult,
+    KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
+    DataDomeTagsResult, TrustDecisionPayloadResult, TrustDecisionSignatureResult,
+)
+from .payloads import sensor_payload, sbsd_payload, pixel_payload, reese84_payload, utmvc_payload, \
+    trustdecision_payload
 
 
 class SessionAsync:
@@ -40,7 +47,12 @@ class SessionAsync:
             self.client = httpx.AsyncClient(http2=True, timeout=httpx.Timeout(30.0))
             self._owns_client = True
 
-    async def generate_sensor_data(self, input_data: SensorInput) -> Tuple[str, str]:
+    async def close(self):
+        """Close the client session if we own it."""
+        if self._owns_client and self.client:
+            await self.client.aclose()
+
+    async def generate_sensor_data(self, input_data: SensorInput) -> SensorResult:
         """
         Returns the sensor data required to generate valid akamai cookies using the Hyper Solutions API.
 
@@ -48,42 +60,12 @@ class SessionAsync:
             input_data (SensorInput): An instance of SensorInput containing the necessary data for generating the sensor data.
 
         Returns:
-            str: Sensor data as a string.
-            str: Context data as a string.
+            SensorResult: payload (sensor data), context (for the next sensor request) and client_hints.
         """
-        await self.ensure_client()
-        sensor_endpoint = "https://akm.hypersolutions.co/v2/sensor"
+        data = await self._post("https://akm.hypersolutions.co/v2/sensor", sensor_payload(input_data))
+        return SensorResult(data["payload"], data.get("context", ""), data.get("headers"))
 
-        headers = self._build_headers()
-        payload_data = {
-            'userAgent': input_data.user_agent,
-            'abck': input_data.abck,
-            'bmsz': input_data.bmsz,
-            'version': input_data.version,
-            'pageUrl': input_data.page_url,
-            'script': input_data.script,
-            'scriptUrl': input_data.script_url,
-            'context': input_data.context,
-            'ip': input_data.ip,
-            'acceptLanguage': input_data.accept_language,
-        }
-        payload = json.dumps(payload_data).encode('utf-8')
-
-        # Compress payload if large enough
-        payload, use_compression = self._compress_payload(payload)
-        if use_compression:
-            headers["content-encoding"] = "gzip"
-
-        response = await self.client.post(sensor_endpoint, headers=headers, content=payload)
-
-        # Decompress response if needed
-        response_content = self._decompress_response(response)
-        response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-
-        return response_data["payload"], response_data.get("context", "")
-
-    async def generate_sbsd_data(self, input_data: SbsdInput) -> Tuple[str, str]:
+    async def generate_sbsd_data(self, input_data: SbsdInput) -> SbsdResult:
         """
         Returns the sbsd data required to solve SBSD using the Hyper Solutions API.
 
@@ -91,23 +73,12 @@ class SessionAsync:
             input_data (SbsdInput): An instance of SbsdInput containing the necessary data for generating the sbsd data.
 
         Returns:
-            str: Sbsd data as a string.
-            str: Context data as a string.
+            SbsdResult: payload (sbsd data), context (for the next sbsd request) and client_hints.
         """
-        sensor_endpoint = "https://akm.hypersolutions.co/sbsd"
-        return await self._send_request_with_context(sensor_endpoint, {
-            'userAgent': input_data.user_agent,
-            'uuid': input_data.uuid,
-            'pageUrl': input_data.page_url,
-            'o': input_data.o_cookie,
-            'script': input_data.script,
-            'acceptLanguage': input_data.accept_language,
-            'ip': input_data.ip,
-            'index': input_data.index,
-            'context': input_data.context,
-        })
+        data = await self._post("https://akm.hypersolutions.co/sbsd", sbsd_payload(input_data))
+        return SbsdResult(data["payload"], data.get("context", ""), data.get("headers"))
 
-    async def generate_pixel_data(self, input_data: PixelInput) -> str:
+    async def generate_pixel_data(self, input_data: PixelInput) -> PixelResult:
         """
         Returns the pixel data using the Hyper Solutions API.
 
@@ -115,83 +86,40 @@ class SessionAsync:
             input_data (PixelInput): An instance of PixelInput containing the necessary data for generating the pixel data.
 
         Returns:
-            str: Pixel data as a string.
+            PixelResult: payload (pixel data).
         """
-        pixel_endpoint = "https://akm.hypersolutions.co/pixel"
-        return await self._send_request(pixel_endpoint, {
-            'userAgent': input_data.user_agent,
-            'htmlVar': input_data.html_var,
-            'scriptVar': input_data.script_var,
-            'ip': input_data.ip,
-            'acceptLanguage': input_data.accept_language,
-        })
+        data = await self._post("https://akm.hypersolutions.co/pixel", pixel_payload(input_data))
+        return PixelResult(data["payload"])
 
-    async def generate_reese84_sensor(self, input_data: ReeseInput) -> str:
+    async def generate_reese84_sensor(self, input_data: ReeseInput) -> Reese84Result:
         """
         Returns the sensor data required to generate valid reese84 cookies using the Hyper Solutions API.
-
-        This function sends a request to the specified sensor endpoint with the necessary data to generate the reese84 sensor data.
 
         Args:
             input_data (ReeseInput): The input data.
 
         Returns:
-            str: Sensor data as a string.
-
-        Raises:
-            ValueError: If the script attribute in input_data is empty.
+            Reese84Result: payload (sensor data) and client_hints (None for Safari user agents).
         """
-        return await self._send_request("https://incapsula.hypersolutions.co/reese84", {
-            'userAgent': input_data.user_agent,
-            'acceptLanguage': input_data.accept_language,
-            'ip': input_data.ip,
-            'scriptUrl': input_data.script_url,
-            'pageUrl': input_data.pageUrl,
-            'pow': input_data.pow,
-            'script': input_data.script,
-        })
+        data = await self._post("https://incapsula.hypersolutions.co/reese84", reese84_payload(input_data))
+        return Reese84Result(data["payload"], data.get("headers"))
 
-    async def generate_utmvc_cookie(self, input_data: UtmvcInput) -> Tuple[str, str]:
+    async def generate_utmvc_cookie(self, input_data: UtmvcInput) -> UtmvcResult:
         """
         Returns the utmvc cookie using the Hyper Solutions API.
 
-        This function sends a request to the utmvc sensor endpoint with the necessary data to generate the utmvc cookie.
         The input data must include a non-empty script and session IDs.
 
         Args:
             input_data (UtmvcInput): An instance of UtmvcInput containing the user agent, session IDs, and script.
 
         Returns:
-            str: The utmvc cookie as a string.
-            str: The swhanedl parameter.
-
-        Raises:
-            ValueError: If the script attribute or session IDs in input_data are empty.
+            UtmvcResult: payload (the utmvc cookie) and swhanedl.
         """
-        await self.ensure_client()
-        headers = self._build_headers()
-        payload_data = {
-            'userAgent': input_data.user_agent,
-            'sessionIds': input_data.session_ids,
-            'script': input_data.script,
-        }
-        payload = json.dumps(payload_data).encode('utf-8')
+        data = await self._post("https://incapsula.hypersolutions.co/utmvc", utmvc_payload(input_data))
+        return UtmvcResult(data["payload"], data["swhanedl"])
 
-        # Compress payload if large enough
-        payload, use_compression = self._compress_payload(payload)
-        if use_compression:
-            headers["content-encoding"] = "gzip"
-
-        response = await self.client.post("https://incapsula.hypersolutions.co/utmvc", headers=headers, content=payload)
-
-        # Decompress response if needed
-        response_content = self._decompress_response(response)
-        response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-
-        return response_data["payload"], response_data["swhanedl"]
-
-    async def generate_kasada_pow(self, input_data: KasadaPowInput) -> str:
+    async def generate_kasada_pow(self, input_data: KasadaPowInput) -> KasadaPowResult:
         """
         Returns the x-kpsdk-cd value using the Hyper Solutions API.
 
@@ -199,42 +127,26 @@ class SessionAsync:
             input_data (KasadaPowInput): An instance of KasadaPowInput containing the st and optionally workTime.
 
         Returns:
-            str: The x-kpsdk-cd value as a string.
+            KasadaPowResult: payload (the x-kpsdk-cd value).
         """
-        return await self._send_request("https://kasada.hypersolutions.co/cd", input_data.to_dict())
+        data = await self._post("https://kasada.hypersolutions.co/cd", input_data.to_dict())
+        return KasadaPowResult(data["payload"])
 
-    async def generate_kasada_payload(self, input_data: KasadaPayloadInput) -> Tuple[str, dict]:
+    async def generate_kasada_payload(self, input_data: KasadaPayloadInput) -> KasadaPayloadResult:
         """
-        Returns a base64 encoded payload and headers using the Hyper Solutions API.
+        Returns a base64 encoded payload, its x-kpsdk-* headers and the client hints using the Hyper Solutions API.
 
         Args:
             input_data (KasadaPayloadInput): An instance of KasadaPayloadInput containing the userAgent,
-                ipsLink and script.
+            ipsLink and script.
 
         Returns:
-            tuple[str, dict]: A tuple containing the base64 encoded payload (to POST to /tl) as a string and a
-            dictionary of headers.
+            KasadaPayloadResult: payload (base64, to POST to /tl), headers (x-kpsdk-*) and client_hints.
         """
-        await self.ensure_client()
-        headers = self._build_headers()
-        payload_data = input_data.to_dict()
-        payload = json.dumps(payload_data).encode('utf-8')
+        data = await self._post("https://kasada.hypersolutions.co/payload", input_data.to_dict())
+        return KasadaPayloadResult(data["payload"], data["headers"], data.get("clientHints"))
 
-        # Compress payload if large enough
-        payload, use_compression = self._compress_payload(payload)
-        if use_compression:
-            headers["content-encoding"] = "gzip"
-
-        response = await self.client.post("https://kasada.hypersolutions.co/payload", headers=headers, content=payload)
-
-        # Decompress response if needed
-        response_content = self._decompress_response(response)
-        response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-
-        return response_data["payload"], response_data["headers"]
-
-    async def generate_botid_header(self, input_data: BotIDHeaderInput) -> str:
+    async def generate_botid_header(self, input_data: BotIDHeaderInput) -> BotIDHeaderResult:
         """
         Returns the x-is-human header value for Vercel BotID using the Hyper Solutions API.
 
@@ -243,41 +155,38 @@ class SessionAsync:
                 user agent, IP, and accept language.
 
         Returns:
-            str: The x-is-human header value as a string.
+            BotIDHeaderResult: payload (the x-is-human header value).
         """
-        return await self._send_request("https://kasada.hypersolutions.co/botid", input_data.to_dict())
+        data = await self._post("https://kasada.hypersolutions.co/botid", input_data.to_dict())
+        return BotIDHeaderResult(data["payload"])
 
-    async def generate_interstitial_payload(self, input_data: DataDomeInterstitialInput) -> Dict[str, Any]:
+    async def generate_interstitial_payload(self, input_data: DataDomeInterstitialInput) -> DataDomeInterstitialResult:
         """
-        Returns the DataDome interstitial payload value and response headers using the Hyper Solutions API.
+        Returns the DataDome interstitial payload using the Hyper Solutions API.
 
         Args:
             input_data (DataDomeInterstitialInput): An instance of DataDomeInterstitialInput.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - payload (str): The payload to post to /interstitial/
-                - headers (Dict[str, str]): The response headers
+            DataDomeInterstitialResult: payload (to post to /interstitial/) and client_hints.
         """
-        return await self._send_request_with_headers("https://datadome.hypersolutions.co/interstitial",
-                                                     input_data.to_dict())
+        data = await self._post("https://datadome.hypersolutions.co/interstitial", input_data.to_dict())
+        return DataDomeInterstitialResult(data["payload"], data.get("headers"))
 
-    async def generate_slider_payload(self, input_data: DataDomeSliderInput) -> Dict[str, Any]:
+    async def generate_slider_payload(self, input_data: DataDomeSliderInput) -> DataDomeSliderResult:
         """
-        Returns the DataDome Slider URL value and response headers using the Hyper Solutions API.
+        Returns the DataDome Slider URL using the Hyper Solutions API.
 
         Args:
             input_data (DataDomeSliderInput): An instance of DataDomeSliderInput.
 
         Returns:
-            Dict[str, Any]: A dictionary containing:
-                - payload (str): The URL to make a GET request to for a solved datadome cookie
-                - headers (Dict[str, str]): The response headers
+            DataDomeSliderResult: payload (the URL to GET for a solved datadome cookie) and client_hints.
         """
-        return await self._send_request_with_headers("https://datadome.hypersolutions.co/slider",
-                                                     input_data.to_dict())
+        data = await self._post("https://datadome.hypersolutions.co/slider", input_data.to_dict())
+        return DataDomeSliderResult(data["payload"], data.get("headers"))
 
-    async def generate_tags_payload(self, input_data: DataDomeTagsInput) -> str:
+    async def generate_tags_payload(self, input_data: DataDomeTagsInput) -> DataDomeTagsResult:
         """
         Returns the DataDome Tags payload using the Hyper Solutions API.
 
@@ -285,11 +194,12 @@ class SessionAsync:
             input_data (DataDomeTagsInput): An instance of DataDomeTagsInput.
 
         Returns:
-            str: The tags payload.
+            DataDomeTagsResult: payload (the tags payload) and client_hints.
         """
-        return await self._send_request("https://datadome.hypersolutions.co/tags", input_data.to_dict())
+        data = await self._post("https://datadome.hypersolutions.co/tags", input_data.to_dict())
+        return DataDomeTagsResult(data["payload"], data.get("headers"))
 
-    async def generate_trustdecision_payload(self, input_data: PayloadInput) -> Tuple[str, str, str]:
+    async def generate_trustdecision_payload(self, input_data: PayloadInput) -> TrustDecisionPayloadResult:
         """
         Generates TrustDecision payload that should be posted to TrustDecision's fingerprinting endpoint.
         Also returns timezone and clientId required for subsequent operations.
@@ -298,36 +208,11 @@ class SessionAsync:
             input_data (PayloadInput): An instance of PayloadInput containing the necessary data for generating the payload.
 
         Returns:
-            Tuple[str, str, str]: A tuple containing:
-                - payload (str): The generated TrustDecision payload for posting to the fingerprinting endpoint
-                - timeZone (str): The timezone to use in the tz header for subsequent requests
-                - clientId (str): The client ID required for generating session signatures
+            TrustDecisionPayloadResult: payload (for the fingerprinting endpoint), time_zone (for the tz header on
+            subsequent requests) and client_id (for generating session signatures).
         """
-        await self.ensure_client()
-        headers = self._build_headers()
-        payload_data = {
-            'userAgent': input_data.user_agent,
-            'pageUrl': input_data.page_url,
-            'fpUrl': input_data.fp_url,
-            'ip': input_data.ip,
-            'acceptLanguage': input_data.accept_language,
-            'script': input_data.script,
-        }
-        payload = json.dumps(payload_data).encode('utf-8')
-
-        # Compress payload if large enough
-        payload, use_compression = self._compress_payload(payload)
-        if use_compression:
-            headers["content-encoding"] = "gzip"
-
-        response = await self.client.post("https://trustdecision.hypersolutions.co/payload", headers=headers, content=payload)
-
-        # Decompress response if needed
-        response_content = self._decompress_response(response)
-        response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-
-        return response_data["payload"], response_data["timeZone"], response_data["clientId"]
+        data = await self._post("https://trustdecision.hypersolutions.co/payload", trustdecision_payload(input_data))
+        return TrustDecisionPayloadResult(data["payload"], data["timeZone"], data["clientId"])
 
     async def decode_trustdecision_session_key(self, input_data: DecodeInput) -> str:
         """
@@ -340,12 +225,13 @@ class SessionAsync:
         Returns:
             str: The decoded session key value for use in the td-session-key header
         """
-        return await self._send_request("https://trustdecision.hypersolutions.co/decode", {
+        data = await self._post("https://trustdecision.hypersolutions.co/decode", {
             'result': input_data.result,
             'requestId': input_data.request_id,
         })
+        return data["payload"]
 
-    async def generate_trustdecision_signature(self, input_data: SignatureInput) -> str:
+    async def generate_trustdecision_signature(self, input_data: SignatureInput) -> TrustDecisionSignatureResult:
         """
         Generates a unique td-session-sign header value for each API request.
         This signature can only be used once and must be regenerated for every request.
@@ -354,12 +240,13 @@ class SessionAsync:
             input_data (SignatureInput): An instance of SignatureInput containing the clientId and path.
 
         Returns:
-            str: The generated signature value for use in the td-session-sign header (single-use only)
+            TrustDecisionSignatureResult: payload (the single-use td-session-sign header value).
         """
-        return await self._send_request("https://trustdecision.hypersolutions.co/sign", {
+        data = await self._post("https://trustdecision.hypersolutions.co/sign", {
             'clientId': input_data.client_id,
             'path': input_data.path,
         })
+        return TrustDecisionSignatureResult(data["payload"])
 
     def generate_signature(self, key: str, secret: str) -> str:
         """
@@ -429,16 +316,16 @@ class SessionAsync:
 
         return content
 
-    async def _send_request(self, url: str, input_data: Dict[str, Any]) -> str:
+    async def _post(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Sends an async request and returns the payload.
+        Sends a request and returns the validated response body.
 
         Args:
             url (str): The endpoint URL
             input_data (Dict[str, Any]): The request data
 
         Returns:
-            str: The response payload
+            Dict[str, Any]: The decoded response body
         """
         await self.ensure_client()
         headers = self._build_headers()
@@ -455,69 +342,4 @@ class SessionAsync:
         response_content = self._decompress_response(response)
         response_data = json.loads(response_content)
         validate_response(response_data, response.status_code)
-        return response_data["payload"]
-
-    async def _send_request_with_context(self, url: str, input_data: Dict[str, Any]) -> Tuple[str, str]:
-        """
-        Sends a request and returns the payload with the context.
-
-        Args:
-            url (str): The endpoint URL
-            input_data (Dict[str, Any]): The request data
-
-        Returns:
-            str: The response payload
-            str: The response context
-        """
-        await self.ensure_client()
-        headers = self._build_headers()
-        payload = json.dumps(input_data).encode('utf-8')
-
-        # Compress payload if large enough
-        payload, use_compression = self._compress_payload(payload)
-        if use_compression:
-            headers["content-encoding"] = "gzip"
-
-        response = await self.client.post(url, headers=headers, content=payload)
-
-        # Decompress response if needed
-        response_content = self._decompress_response(response)
-        response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-        return response_data["payload"], response_data.get("context", "")
-
-    async def _send_request_with_headers(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Sends an async request and returns the payload with headers.
-
-        Args:
-            url (str): The endpoint URL
-            input_data (Dict[str, Any]): The request data
-
-        Returns:
-            Dict[str, Any]: Dictionary containing payload and headers
-        """
-        await self.ensure_client()
-        headers = self._build_headers()
-        payload = json.dumps(input_data).encode('utf-8')
-
-        # Compress payload if large enough
-        payload, use_compression = self._compress_payload(payload)
-        if use_compression:
-            headers["content-encoding"] = "gzip"
-
-        response = await self.client.post(url, headers=headers, content=payload)
-
-        # Decompress response if needed
-        response_content = self._decompress_response(response)
-        response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-        return {
-            "payload": response_data["payload"],
-            "headers": response_data["headers"]
-        }
-
-    async def close(self):
-        """Close the client session if we own it."""
-        if self._owns_client and self.client:
-            await self.client.aclose()
+        return response_data

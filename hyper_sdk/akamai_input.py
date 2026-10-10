@@ -23,16 +23,21 @@ class PixelInput:
 
 
 class SbsdInput:
-    def __init__(self, index: int, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str,
-                 accept_language: str, ip: str, context: str = ""):
-        self.index = index
+    def __init__(self, user_agent: str, uuid: str, page_url: str, o_cookie: str, script: str,
+                 accept_language: str, ip: str, context: str = "", script_url: str = ""):
         self.user_agent = user_agent
         self.uuid = uuid
         self.page_url = page_url
         self.o_cookie = o_cookie
         # script is mutually exclusive with context. The first sbsd request should
-        # include script; subsequent requests should only include context.
+        # include script; subsequent requests should only include context. A hard
+        # block (an sbsd POST with a t parameter) always sends script and an empty
+        # context, never the context from an earlier request.
         self.script = script
         self.accept_language = accept_language
         self.ip = ip
         self.context = context
+        # script_url is the absolute src of the SBSD script tag, query included.
+        # Optional: when set, the fingerprint's resource-timing signal carries the
+        # script's own entry the way a browser's does.
+        self.script_url = script_url
