@@ -2,7 +2,7 @@
 
 from typing import Any, Dict
 
-from .akamai_input import SensorInput, PixelInput, SbsdInput
+from .akamai_input import SensorInput, PixelInput, SbsdInput, TelemetryInput, TelemetryParamsInput
 from .incapsula_input import UtmvcInput, ReeseInput
 from .trustdecision_input import PayloadInput
 
@@ -19,6 +19,21 @@ def sensor_payload(input_data: SensorInput) -> Dict[str, Any]:
         'context': input_data.context,
         'ip': input_data.ip,
         'acceptLanguage': input_data.accept_language,
+    }
+
+
+def telemetry_payload(input_data: TelemetryInput) -> Dict[str, Any]:
+    # the flat sensor request plus "j", as /v1/telemetry binds it
+    payload = sensor_payload(input_data)
+    payload['j'] = input_data.j
+    return payload
+
+
+def telemetry_params_payload(input_data: TelemetryParamsInput) -> Dict[str, Any]:
+    return {
+        'pageUrl': input_data.page_url,
+        'script': input_data.script,
+        'context': input_data.context,
     }
 
 

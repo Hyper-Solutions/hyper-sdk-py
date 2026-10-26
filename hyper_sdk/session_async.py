@@ -6,17 +6,17 @@ import json
 import gzip
 
 from .shared import generate_signature, build_headers, validate_response
-from .akamai_input import SensorInput, PixelInput, SbsdInput
+from .akamai_input import SensorInput, PixelInput, SbsdInput, TelemetryInput, TelemetryParamsInput
 from .kasada_input import KasadaPowInput, KasadaPayloadInput, BotIDHeaderInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
 from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
 from .results import (
-    SensorResult, PixelResult, SbsdResult, Reese84Result, UtmvcResult, KasadaPayloadResult,
+    SensorResult, TelemetryResult, TelemetryParamsResult, PixelResult, SbsdResult, Reese84Result, UtmvcResult, KasadaPayloadResult,
     KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
     DataDomeTagsResult, TrustDecisionPayloadResult, TrustDecisionSignatureResult,
 )
-from .payloads import sensor_payload, sbsd_payload, pixel_payload, reese84_payload, utmvc_payload, \
+from .payloads import sensor_payload, telemetry_payload, telemetry_params_payload, sbsd_payload, pixel_payload, reese84_payload, utmvc_payload, \
     trustdecision_payload
 
 
@@ -64,6 +64,34 @@ class SessionAsync:
         """
         data = await self._post("https://akm.hypersolutions.co/v2/sensor", sensor_payload(input_data))
         return SensorResult(data["payload"], data.get("context", ""), data.get("headers"))
+
+    async def generate_telemetry(self, input_data: TelemetryInput) -> TelemetryResult:
+        """
+        Returns the value of the Akamai-BM-Telemetry header that the site's protected API calls carry, using the
+        Hyper Solutions API. Each protected call takes a fresh header built from the previous call's context.
+
+        Args:
+            input_data (TelemetryInput): An instance of TelemetryInput containing the sensor request and the get_params j.
+
+        Returns:
+            TelemetryResult: header (the header value), context (for the next telemetry request) and client_hints.
+        """
+        data = await self._post("https://akm.hypersolutions.co/v1/telemetry", telemetry_payload(input_data))
+        return TelemetryResult(data["payload"], data.get("context", ""), data.get("headers"))
+
+    async def get_telemetry_params(self, input_data: TelemetryParamsInput) -> TelemetryParamsResult:
+        """
+        Returns the path of the site's get_params request, whose response carries the j for TelemetryInput.j, and a
+        context that can replace the script on the first telemetry request, using the Hyper Solutions API.
+
+        Args:
+            input_data (TelemetryParamsInput): An instance of TelemetryParamsInput with the page url and the script or a context.
+
+        Returns:
+            TelemetryParamsResult: path (the get_params path) and context.
+        """
+        data = await self._post("https://akm.hypersolutions.co/v1/telemetry/params", telemetry_params_payload(input_data))
+        return TelemetryParamsResult(data["payload"], data.get("context", ""))
 
     async def generate_sbsd_data(self, input_data: SbsdInput) -> SbsdResult:
         """

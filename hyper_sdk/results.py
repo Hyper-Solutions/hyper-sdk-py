@@ -19,7 +19,8 @@ from typing import Dict, Optional
 ClientHints = Optional[Dict[str, str]]
 
 __all__ = [
-    "ClientHints", "SensorResult", "PixelResult", "SbsdResult", "Reese84Result", "UtmvcResult",
+    "ClientHints", "SensorResult", "TelemetryResult", "TelemetryParamsResult", "PixelResult", "SbsdResult",
+    "Reese84Result", "UtmvcResult",
     "KasadaPayloadResult", "KasadaPowResult", "BotIDHeaderResult", "DataDomeInterstitialResult",
     "DataDomeSliderResult", "DataDomeTagsResult", "TrustDecisionPayloadResult", "TrustDecisionSignatureResult",
 ]
@@ -33,6 +34,26 @@ class SensorResult:
     context: str
     """Send back as SensorInput.context on the next sensor request."""
     client_hints: ClientHints = None
+
+
+@dataclass
+class TelemetryResult:
+    """Returned by generate_telemetry."""
+    header: str
+    """The ready-to-send value of the Akamai-BM-Telemetry header."""
+    context: str
+    """Send back as TelemetryInput.context on the next telemetry request."""
+    client_hints: ClientHints = None
+
+
+@dataclass
+class TelemetryParamsResult:
+    """Returned by get_telemetry_params."""
+    path: str
+    """The site's get_params path, exactly as the browser requests it. GET it on the
+    page's origin; the "j" in its JSON response goes into TelemetryInput.j."""
+    context: str
+    """Can replace the script on the first generate_telemetry request."""
 
 
 @dataclass

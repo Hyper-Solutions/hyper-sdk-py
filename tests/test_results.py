@@ -7,7 +7,7 @@ import unittest
 import httpx
 
 from hyper_sdk import (
-    Session, SessionAsync, SensorInput, SbsdInput, ReeseInput, KasadaPayloadInput,
+    Session, SessionAsync, SensorInput, SbsdInput, TelemetryInput, TelemetryParamsInput, ReeseInput, KasadaPayloadInput,
     DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput,
 )
 
@@ -30,14 +30,21 @@ def recorder(body):
 
     def handler(request: httpx.Request) -> httpx.Response:
         sent.append(json.loads(request.content))
+        handler.urls.append(str(request.url))
         return httpx.Response(200, json=body)
 
+    handler.urls = []
     return handler, sent
 
 
 def sensor_input():
     return SensorInput(abck="", bmsz="", version="3", page_url="", user_agent="", ip="",
                        accept_language="", context="", script="", script_url="")
+
+
+def telemetry_input(context="", j=""):
+    return TelemetryInput(abck="a", bmsz="b", page_url="https://example.com/", user_agent="", ip="",
+                          accept_language="", context=context, script="", script_url="", j=j)
 
 
 def sbsd_input(script_url=""):
@@ -78,6 +85,8 @@ class SyncResults(unittest.TestCase):
         self.assertEqual((sensor.payload, sensor.context, sensor.client_hints), ("p", "c", HINTS))
         sbsd = s.generate_sbsd_data(sbsd_input())
         self.assertEqual((sbsd.payload, sbsd.context, sbsd.client_hints), ("p", "c", HINTS))
+        telemetry = s.generate_telemetry(telemetry_input())
+        self.assertEqual((telemetry.header, telemetry.context, telemetry.client_hints), ("p", "c", HINTS))
         self.assertEqual(s.generate_reese84_sensor(reese_input()).client_hints, HINTS)
         self.assertEqual(s.generate_slider_payload(slider_input()).client_hints, HINTS)
         self.assertEqual(s.generate_interstitial_payload(interstitial_input()).client_hints, HINTS)
@@ -105,6 +114,24 @@ class SyncResults(unittest.TestCase):
         self.assertNotIn("scriptUrl", sent[2])
         self.assertEqual(sent[3]["scriptUrl"], "https://example.com/abc.js?v=1")
 
+    def test_telemetry_wire_and_endpoints(self):
+        # the flat sensor request plus "j", as /v1/telemetry binds it, and each
+        # telemetry method on its own endpoint
+        handler, sent = recorder({"payload": "p", "context": "c"})
+        s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(handler)))
+        s.generate_telemetry(telemetry_input(context="ctx", j="AAQ%2f"))
+        self.assertEqual(handler.urls[0], "https://akm.hypersolutions.co/v1/telemetry")
+        for key, want in (("abck", "a"), ("bmsz", "b"), ("pageUrl", "https://example.com/"), ("context", "ctx"),
+                          ("j", "AAQ%2f")):
+            self.assertEqual(sent[0][key], want)
+
+        handler, sent = recorder({"payload": "/_bm/get_params?type=web-jsto&v=aN+c/9=", "context": "c"})
+        s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(handler)))
+        res = s.get_telemetry_params(TelemetryParamsInput(page_url="https://example.com/", script="s"))
+        self.assertEqual(handler.urls[0], "https://akm.hypersolutions.co/v1/telemetry/params")
+        self.assertEqual(sent[0], {"pageUrl": "https://example.com/", "script": "s", "context": ""})
+        self.assertEqual((res.path, res.context), ("/_bm/get_params?type=web-jsto&v=aN+c/9=", "c"))
+
     def test_api_error_still_raises(self):
         s, _ = self.session({"error": "boom"})
         with self.assertRaises(Exception):
@@ -129,6 +156,15 @@ class AsyncResults(unittest.TestCase):
         self.assertEqual((res.payload, res.context, res.client_hints), ("p", "c", HINTS))
         res, _ = self.run_async(BODY, lambda s: s.generate_tags_payload(tags_input()))
         self.assertEqual(res.client_hints, HINTS)
+
+    def test_telemetry(self):
+        res, sent = self.run_async(BODY, lambda s: s.generate_telemetry(telemetry_input(j="AAQ")))
+        self.assertEqual((res.header, res.context, res.client_hints), ("p", "c", HINTS))
+        self.assertEqual(sent[0]["j"], "AAQ")
+        res, _ = self.run_async({"payload": "/_bm/get_params?type=web-jsto&v=x", "context": "c"},
+                                lambda s: s.get_telemetry_params(TelemetryParamsInput(page_url="https://example.com/",
+                                                                                     script="s")))
+        self.assertEqual((res.path, res.context), ("/_bm/get_params?type=web-jsto&v=x", "c"))
 
     def test_kasada_payload_and_strict(self):
         res, sent = self.run_async(KASADA_BODY, lambda s: s.generate_kasada_payload(kasada_input(strict=True)))
