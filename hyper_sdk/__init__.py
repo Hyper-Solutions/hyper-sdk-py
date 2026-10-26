@@ -8,4 +8,5 @@ from .results import *
 from .session import *
 from .session_async import *
 from .kasada.parse import *
+from .kasada.user_agent import *
 from .datadome.parse import *

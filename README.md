@@ -310,6 +310,21 @@ script_path = parse_kasada_script_path(blocked_page_html)
 # Returns: /ips.js?timestamp=...
 ```
 
+### Mobile User-Agent Generation
+
+Generate the **Kasada mobile `user-agent`** value sent on the native app flow. The mobile SDK derives it as the lowercase hex MD5 of `"<os_version> / <bundle_id> <app_version>"`:
+
+```python
+from hyper_sdk import generate_kasada_user_agent
+
+user_agent = generate_kasada_user_agent("18.0.1", "com.example.app", "9.15.0")
+# iOS:     os_version = UIDevice.systemVersion, bundle_id = CFBundleIdentifier
+# Android: os_version = Build.VERSION.SDK_INT,  bundle_id = package name
+# Returns: 7016adc4ba8d433533954ebad33be424
+```
+
+Available in `hyper_sdk` 3.1.0 and later.
+
 ## 🎯 DataDome Solutions
 
 Solve **DataDome captchas** including slider challenges and interstitial pages.
