@@ -1,7 +1,8 @@
 """Shared utility functions for both sync and async Session classes."""
 
-from typing import Dict
+from typing import Any, Dict, Optional
 from datetime import datetime, timedelta, timezone
+import hashlib
 import jwt
 
 
@@ -76,3 +77,31 @@ def validate_response(response_data: dict, status_code: int) -> None:
 
     if status_code != 200:
         raise Exception(f"API returned with status code: {status_code}")
+
+
+def script_hash(script: str) -> str:
+    """
+    Returns the hash the API identifies a challenge script by: the lowercase hex sha256 of the script's UTF-8 bytes,
+    exactly as the site served it.
+    """
+    return hashlib.sha256(script.encode('utf-8')).hexdigest()
+
+
+def with_script_hash(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Returns a copy of payload with its script replaced by a "scriptHash" field, or None when payload has no script.
+    The hash stays out of the public input types, so callers always pass the script.
+    """
+    script = payload.get('script')
+    if not script:
+        return None
+    hashed = {key: value for key, value in payload.items() if key != 'script'}
+    hashed['scriptHash'] = script_hash(script)
+    return hashed
+
+
+def is_script_required(response_data: Any, status_code: int) -> bool:
+    """
+    Reports whether the API answered that it has not seen a script hash yet and needs the script itself.
+    """
+    return status_code == 422 and isinstance(response_data, dict) and response_data.get('error') == 'script_required'

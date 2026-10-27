@@ -1,6 +1,7 @@
 """Runs the real Session / SessionAsync methods against canned API responses."""
 
 import asyncio
+import hashlib
 import json
 import unittest
 
@@ -129,7 +130,9 @@ class SyncResults(unittest.TestCase):
         s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(handler)))
         res = s.get_telemetry_params(TelemetryParamsInput(page_url="https://example.com/", script="s"))
         self.assertEqual(handler.urls[0], "https://akm.hypersolutions.co/v1/telemetry/params")
-        self.assertEqual(sent[0], {"pageUrl": "https://example.com/", "script": "s", "context": ""})
+        # a script goes out as its hash; this canned API accepts the hash
+        self.assertEqual(sent[0], {"pageUrl": "https://example.com/", "context": "",
+                                   "scriptHash": hashlib.sha256(b"s").hexdigest()})
         self.assertEqual((res.path, res.context), ("/_bm/get_params?type=web-jsto&v=aN+c/9=", "c"))
 
     def test_api_error_still_raises(self):
