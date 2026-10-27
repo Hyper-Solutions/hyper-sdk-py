@@ -21,7 +21,7 @@ ClientHints = Optional[Dict[str, str]]
 __all__ = [
     "ClientHints", "SensorResult", "TelemetryResult", "TelemetryParamsResult", "PixelResult", "SbsdResult",
     "Reese84Result", "UtmvcResult",
-    "KasadaPayloadResult", "KasadaPowResult", "BotIDHeaderResult", "DataDomeInterstitialResult",
+    "KasadaPayloadResult", "KasadaVersionResult", "KasadaPowResult", "BotIDHeaderResult", "DataDomeInterstitialResult",
     "DataDomeSliderResult", "DataDomeTagsResult", "TrustDecisionPayloadResult", "TrustDecisionSignatureResult",
 ]
 
@@ -96,6 +96,14 @@ class KasadaPayloadResult:
     """The x-kpsdk-* headers to send with that POST."""
     client_hints: ClientHints = None
     """Accept-CH headers; unlike headers, send only the ones the site asked for."""
+
+
+@dataclass
+class KasadaVersionResult:
+    """Returned by get_kasada_version."""
+    version: str
+    """The x-kpsdk-v value, such as "j-1.2.797". Send it verbatim on the /fp request
+    and in the x-kpsdk-v header."""
 
 
 @dataclass

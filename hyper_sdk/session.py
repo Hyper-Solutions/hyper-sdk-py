@@ -7,13 +7,13 @@ import gzip
 
 from .shared import generate_signature, build_headers, validate_response, with_script_hash, is_script_required
 from .akamai_input import SensorInput, PixelInput, SbsdInput, TelemetryInput, TelemetryParamsInput
-from .kasada_input import KasadaPowInput, KasadaPayloadInput, BotIDHeaderInput
+from .kasada_input import KasadaPowInput, KasadaPayloadInput, KasadaVersionInput, BotIDHeaderInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
 from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
 from .results import (
     SensorResult, TelemetryResult, TelemetryParamsResult, PixelResult, SbsdResult, Reese84Result, UtmvcResult, KasadaPayloadResult,
-    KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
+    KasadaVersionResult, KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
     DataDomeTagsResult, TrustDecisionPayloadResult, TrustDecisionSignatureResult,
 )
 from .payloads import sensor_payload, telemetry_payload, telemetry_params_payload, sbsd_payload, pixel_payload, reese84_payload, utmvc_payload, \
@@ -165,6 +165,20 @@ class Session:
         """
         data = self._post("https://kasada.hypersolutions.co/payload", input_data.to_dict())
         return KasadaPayloadResult(data["payload"], data["headers"], data.get("clientHints"))
+
+    def get_kasada_version(self, input_data: KasadaVersionInput) -> KasadaVersionResult:
+        """
+        Returns the x-kpsdk-v value of a site's p.js, sent verbatim on the /fp request and in the x-kpsdk-v header,
+        using the Hyper Solutions API. It is a helper and is not counted as usage.
+
+        Args:
+            input_data (KasadaVersionInput): An instance of KasadaVersionInput with the page url and the p.js script.
+
+        Returns:
+            KasadaVersionResult: version (the x-kpsdk-v value).
+        """
+        data = self._post("https://kasada.hypersolutions.co/version", input_data.to_dict())
+        return KasadaVersionResult(data["payload"])
 
     def generate_botid_header(self, input_data: BotIDHeaderInput) -> BotIDHeaderResult:
         """
