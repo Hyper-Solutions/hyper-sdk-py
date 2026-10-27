@@ -53,6 +53,21 @@ class KasadaPayloadInput:
             result["strict"] = True
         return result
 
+class KasadaVersionInput:
+    def __init__(self, page_url: str, script: str):
+        # PageUrl is the URL of the page that loaded p.js
+        self.page_url = page_url
+
+        # Script is the p.js script
+        self.script = script
+
+    def to_dict(self):
+        return {
+            "pageUrl": self.page_url,
+            "script": self.script,
+        }
+
+
 class BotIDHeaderInput:
     def __init__(self, script: str, user_agent: str, ip: str, accept_language: str):
         # Script is the c.js script retrieved from the BotID script endpoint

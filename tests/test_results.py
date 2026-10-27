@@ -1,6 +1,7 @@
 """Runs the real Session / SessionAsync methods against canned API responses."""
 
 import asyncio
+import hashlib
 import json
 import unittest
 
@@ -8,6 +9,7 @@ import httpx
 
 from hyper_sdk import (
     Session, SessionAsync, SensorInput, SbsdInput, TelemetryInput, TelemetryParamsInput, ReeseInput, KasadaPayloadInput,
+    KasadaVersionInput,
     DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput,
 )
 
@@ -129,8 +131,23 @@ class SyncResults(unittest.TestCase):
         s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(handler)))
         res = s.get_telemetry_params(TelemetryParamsInput(page_url="https://example.com/", script="s"))
         self.assertEqual(handler.urls[0], "https://akm.hypersolutions.co/v1/telemetry/params")
-        self.assertEqual(sent[0], {"pageUrl": "https://example.com/", "script": "s", "context": ""})
+        # a script goes out as its hash; this canned API accepts the hash
+        self.assertEqual(sent[0], {"pageUrl": "https://example.com/", "context": "",
+                                   "scriptHash": hashlib.sha256(b"s").hexdigest()})
         self.assertEqual((res.path, res.context), ("/_bm/get_params?type=web-jsto&v=aN+c/9=", "c"))
+
+    def test_kasada_version(self):
+        # the script goes out as-is, never as a hash
+        handler, sent = recorder({"payload": "j-1.2.797"})
+        s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(handler)))
+        res = s.get_kasada_version(KasadaVersionInput(page_url="https://example.com/", script="p.js body"))
+        self.assertEqual(handler.urls, ["https://kasada.hypersolutions.co/version"])
+        self.assertEqual(sent, [{"pageUrl": "https://example.com/", "script": "p.js body"}])
+        self.assertEqual(res.version, "j-1.2.797")
+
+        s, _ = self.session({"error": "invalid script"})
+        with self.assertRaisesRegex(Exception, "invalid script"):
+            s.get_kasada_version(KasadaVersionInput(page_url="https://example.com/", script="p.js body"))
 
     def test_api_error_still_raises(self):
         s, _ = self.session({"error": "boom"})
@@ -165,6 +182,14 @@ class AsyncResults(unittest.TestCase):
                                 lambda s: s.get_telemetry_params(TelemetryParamsInput(page_url="https://example.com/",
                                                                                      script="s")))
         self.assertEqual((res.path, res.context), ("/_bm/get_params?type=web-jsto&v=x", "c"))
+
+    def test_kasada_version(self):
+        version_input = KasadaVersionInput(page_url="https://example.com/", script="p.js body")
+        res, sent = self.run_async({"payload": "j-1.2.797"}, lambda s: s.get_kasada_version(version_input))
+        self.assertEqual(sent, [{"pageUrl": "https://example.com/", "script": "p.js body"}])
+        self.assertEqual(res.version, "j-1.2.797")
+        with self.assertRaisesRegex(Exception, "invalid script"):
+            self.run_async({"error": "invalid script"}, lambda s: s.get_kasada_version(version_input))
 
     def test_kasada_payload_and_strict(self):
         res, sent = self.run_async(KASADA_BODY, lambda s: s.generate_kasada_payload(kasada_input(strict=True)))

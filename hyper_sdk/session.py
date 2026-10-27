@@ -5,15 +5,15 @@ import httpx
 import json
 import gzip
 
-from .shared import generate_signature, build_headers, validate_response
+from .shared import generate_signature, build_headers, validate_response, with_script_hash, is_script_required
 from .akamai_input import SensorInput, PixelInput, SbsdInput, TelemetryInput, TelemetryParamsInput
-from .kasada_input import KasadaPowInput, KasadaPayloadInput, BotIDHeaderInput
+from .kasada_input import KasadaPowInput, KasadaPayloadInput, KasadaVersionInput, BotIDHeaderInput
 from .datadome_input import DataDomeSliderInput, DataDomeInterstitialInput, DataDomeTagsInput
 from .incapsula_input import UtmvcInput, ReeseInput
 from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
 from .results import (
     SensorResult, TelemetryResult, TelemetryParamsResult, PixelResult, SbsdResult, Reese84Result, UtmvcResult, KasadaPayloadResult,
-    KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
+    KasadaVersionResult, KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
     DataDomeTagsResult, TrustDecisionPayloadResult, TrustDecisionSignatureResult,
 )
 from .payloads import sensor_payload, telemetry_payload, telemetry_params_payload, sbsd_payload, pixel_payload, reese84_payload, utmvc_payload, \
@@ -54,7 +54,7 @@ class Session:
         Returns:
             SensorResult: payload (sensor data), context (for the next sensor request) and client_hints.
         """
-        data = self._post("https://akm.hypersolutions.co/v2/sensor", sensor_payload(input_data))
+        data = self._post_script("https://akm.hypersolutions.co/v2/sensor", sensor_payload(input_data))
         return SensorResult(data["payload"], data.get("context", ""), data.get("headers"))
 
     def generate_telemetry(self, input_data: TelemetryInput) -> TelemetryResult:
@@ -68,7 +68,7 @@ class Session:
         Returns:
             TelemetryResult: header (the header value), context (for the next telemetry request) and client_hints.
         """
-        data = self._post("https://akm.hypersolutions.co/v1/telemetry", telemetry_payload(input_data))
+        data = self._post_script("https://akm.hypersolutions.co/v1/telemetry", telemetry_payload(input_data))
         return TelemetryResult(data["payload"], data.get("context", ""), data.get("headers"))
 
     def get_telemetry_params(self, input_data: TelemetryParamsInput) -> TelemetryParamsResult:
@@ -82,7 +82,7 @@ class Session:
         Returns:
             TelemetryParamsResult: path (the get_params path) and context.
         """
-        data = self._post("https://akm.hypersolutions.co/v1/telemetry/params", telemetry_params_payload(input_data))
+        data = self._post_script("https://akm.hypersolutions.co/v1/telemetry/params", telemetry_params_payload(input_data))
         return TelemetryParamsResult(data["payload"], data.get("context", ""))
 
     def generate_sbsd_data(self, input_data: SbsdInput) -> SbsdResult:
@@ -95,7 +95,7 @@ class Session:
         Returns:
             SbsdResult: payload (sbsd data), context (for the next sbsd request) and client_hints.
         """
-        data = self._post("https://akm.hypersolutions.co/sbsd", sbsd_payload(input_data))
+        data = self._post_script("https://akm.hypersolutions.co/sbsd", sbsd_payload(input_data))
         return SbsdResult(data["payload"], data.get("context", ""), data.get("headers"))
 
     def generate_pixel_data(self, input_data: PixelInput) -> PixelResult:
@@ -121,7 +121,7 @@ class Session:
         Returns:
             Reese84Result: payload (sensor data) and client_hints (None for Safari user agents).
         """
-        data = self._post("https://incapsula.hypersolutions.co/reese84", reese84_payload(input_data))
+        data = self._post_script("https://incapsula.hypersolutions.co/reese84", reese84_payload(input_data))
         return Reese84Result(data["payload"], data.get("headers"))
 
     def generate_utmvc_cookie(self, input_data: UtmvcInput) -> UtmvcResult:
@@ -166,6 +166,20 @@ class Session:
         data = self._post("https://kasada.hypersolutions.co/payload", input_data.to_dict())
         return KasadaPayloadResult(data["payload"], data["headers"], data.get("clientHints"))
 
+    def get_kasada_version(self, input_data: KasadaVersionInput) -> KasadaVersionResult:
+        """
+        Returns the x-kpsdk-v value of a site's p.js, sent verbatim on the /fp request and in the x-kpsdk-v header,
+        using the Hyper Solutions API. It is a helper and is not counted as usage.
+
+        Args:
+            input_data (KasadaVersionInput): An instance of KasadaVersionInput with the page url and the p.js script.
+
+        Returns:
+            KasadaVersionResult: version (the x-kpsdk-v value).
+        """
+        data = self._post("https://kasada.hypersolutions.co/version", input_data.to_dict())
+        return KasadaVersionResult(data["payload"])
+
     def generate_botid_header(self, input_data: BotIDHeaderInput) -> BotIDHeaderResult:
         """
         Returns the x-is-human header value for Vercel BotID using the Hyper Solutions API.
@@ -190,7 +204,7 @@ class Session:
         Returns:
             DataDomeInterstitialResult: payload (to post to /interstitial/) and client_hints.
         """
-        data = self._post("https://datadome.hypersolutions.co/interstitial", input_data.to_dict())
+        data = self._post_script("https://datadome.hypersolutions.co/interstitial", input_data.to_dict())
         return DataDomeInterstitialResult(data["payload"], data.get("headers"))
 
     def generate_slider_payload(self, input_data: DataDomeSliderInput) -> DataDomeSliderResult:
@@ -203,7 +217,7 @@ class Session:
         Returns:
             DataDomeSliderResult: payload (the URL to GET for a solved datadome cookie) and client_hints.
         """
-        data = self._post("https://datadome.hypersolutions.co/slider", input_data.to_dict())
+        data = self._post_script("https://datadome.hypersolutions.co/slider", input_data.to_dict())
         return DataDomeSliderResult(data["payload"], data.get("headers"))
 
     def generate_tags_payload(self, input_data: DataDomeTagsInput) -> DataDomeTagsResult:
@@ -347,6 +361,44 @@ class Session:
         Returns:
             Dict[str, Any]: The decoded response body
         """
+        response_data, status_code = self._send(url, input_data)
+        validate_response(response_data, status_code)
+        return response_data
+
+    def _post_script(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Sends a request that carries a challenge script with only the script's hash in place of the script. The API
+        answers 422 script_required only for a script no client has sent yet, and the request is then sent once more
+        with the script, which the API stores for every later request.
+
+        Args:
+            url (str): The endpoint URL
+            input_data (Dict[str, Any]): The request data, script included
+
+        Returns:
+            Dict[str, Any]: The decoded response body
+        """
+        hashed = with_script_hash(input_data)
+        if hashed is None:
+            return self._post(url, input_data)
+
+        response_data, status_code = self._send(url, hashed)
+        if is_script_required(response_data, status_code):
+            return self._post(url, input_data)
+        validate_response(response_data, status_code)
+        return response_data
+
+    def _send(self, url: str, input_data: Dict[str, Any]) -> Tuple[Any, int]:
+        """
+        Sends a request and returns the decoded response body and the status code.
+
+        Args:
+            url (str): The endpoint URL
+            input_data (Dict[str, Any]): The request data
+
+        Returns:
+            Tuple[Any, int]: The decoded response body and the HTTP status code
+        """
         headers = self._build_headers()
         payload = json.dumps(input_data).encode('utf-8')
 
@@ -360,5 +412,4 @@ class Session:
         # Decompress response if needed
         response_content = self._decompress_response(response)
         response_data = json.loads(response_content)
-        validate_response(response_data, response.status_code)
-        return response_data
+        return response_data, response.status_code
