@@ -325,6 +325,25 @@ user_agent = generate_kasada_user_agent("18.0.1", "com.example.app", "9.15.0")
 
 Available in `hyper_sdk` 3.1.0 and later.
 
+### Mobile x-kpsdk-dv Generation
+
+On iOS the Kasada SDK (`x-kpsdk-v` i-2.x) also sends an **`x-kpsdk-dv`** header describing the device and the app. Build it from the same values as the user-agent, plus the model identifier, and pass the same value as `dv` on the payload request so the payload is generated on an iPhone with that model's screen and iOS version:
+
+```python
+from hyper_sdk import KasadaPayloadInput, generate_kasada_dv, generate_kasada_user_agent
+
+user_agent = generate_kasada_user_agent("18.0.1", "com.example.app", "9.15.0")
+dv = generate_kasada_dv("18.0.1", "iPhone13,2", "com.example.app", "9.15.0")
+# hardware_id is the model identifier from utsname.machine ("iPhone13,2" is an iPhone 12)
+
+result = session.generate_kasada_payload(KasadaPayloadInput(
+    user_agent, ips_link, script, "en-US,en;q=0.9", ip,
+    dv=dv,  # the x-kpsdk-dv value you send to the site
+))
+```
+
+Available in `hyper_sdk` 4.2.0 and later.
+
 ## 🎯 DataDome Solutions
 
 Solve **DataDome captchas** including slider challenges and interstitial pages.

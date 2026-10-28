@@ -9,4 +9,5 @@ from .session import *
 from .session_async import *
 from .kasada.parse import *
 from .kasada.user_agent import *
+from .kasada.dv import *
 from .datadome.parse import *
