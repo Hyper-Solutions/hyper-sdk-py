@@ -21,7 +21,7 @@ class KasadaPowInput:
 
 class KasadaPayloadInput:
     def __init__(self, user_agent: str, ips_link: str, script: str, accept_language: str, ip: str,
-                 strict: bool = False):
+                 strict: bool = False, dv: str = ""):
         # UserAgent must be a Chrome Windows User-Agent.
         self.user_agent = user_agent
 
@@ -41,6 +41,12 @@ class KasadaPayloadInput:
         # set". Off by default: such a payload usually still works.
         self.strict = strict
 
+        # Dv is the x-kpsdk-dv header the iOS app flow sends, exactly as sent (see
+        # generate_kasada_dv). Optional, iOS app user agents only: the payload is then
+        # generated on a device with the screen of the model it names and the iOS
+        # release it names, so the two agree.
+        self.dv = dv
+
     def to_dict(self):
         result = {
             "userAgent": self.user_agent,
@@ -51,6 +57,8 @@ class KasadaPayloadInput:
         }
         if self.strict:
             result["strict"] = True
+        if self.dv:
+            result["dv"] = self.dv
         return result
 
 class KasadaVersionInput:
