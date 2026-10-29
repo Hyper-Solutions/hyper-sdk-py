@@ -14,7 +14,7 @@ from .trustdecision_input import PayloadInput, DecodeInput, SignatureInput
 from .results import (
     SensorResult, TelemetryResult, TelemetryParamsResult, PixelResult, SbsdResult, Reese84Result, UtmvcResult, KasadaPayloadResult,
     KasadaVersionResult, KasadaPowResult, BotIDHeaderResult, DataDomeInterstitialResult, DataDomeSliderResult,
-    DataDomeTagsResult, TrustDecisionPayloadResult, TrustDecisionSignatureResult,
+    DataDomeTagsResult, TrustDecisionPayloadResult, TrustDecisionSignatureResult, UsageResult,
 )
 from .payloads import sensor_payload, telemetry_payload, telemetry_params_payload, sbsd_payload, pixel_payload, reese84_payload, utmvc_payload, \
     trustdecision_payload
@@ -179,6 +179,16 @@ class Session:
         """
         data = self._post("https://kasada.hypersolutions.co/version", input_data.to_dict())
         return KasadaVersionResult(data["payload"])
+
+    def get_usage(self) -> UsageResult:
+        """
+        Returns the euro balance and the per-plan request quota of the session's API key, using the Hyper Solutions
+        API. It is not counted as usage.
+
+        Returns:
+            UsageResult: balance_euro and plans (one UsagePlan per product).
+        """
+        return UsageResult.from_dict(self._get("https://api.hypersolutions.co/usage"))
 
     def generate_botid_header(self, input_data: BotIDHeaderInput) -> BotIDHeaderResult:
         """
@@ -349,6 +359,23 @@ class Session:
                 pass
 
         return content
+
+    def _get(self, url: str) -> Dict[str, Any]:
+        """
+        Sends a GET without a body and returns the validated response body.
+
+        Args:
+            url (str): The endpoint URL
+
+        Returns:
+            Dict[str, Any]: The decoded response body
+        """
+        headers = self._build_headers()
+        headers.pop("Content-Type", None)
+        response = self.client.get(url, headers=headers)
+        response_data = json.loads(self._decompress_response(response))
+        validate_response(response_data, response.status_code)
+        return response_data
 
     def _post(self, url: str, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """
