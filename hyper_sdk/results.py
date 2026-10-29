@@ -5,7 +5,7 @@ the API adds later become new attributes rather than breaking changes.
 """
 
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 # The Accept-CH client hint headers for the device a payload was generated for,
 # keyed by lowercase header name, values ready to send verbatim (already
@@ -23,6 +23,7 @@ __all__ = [
     "Reese84Result", "UtmvcResult",
     "KasadaPayloadResult", "KasadaVersionResult", "KasadaPowResult", "BotIDHeaderResult", "DataDomeInterstitialResult",
     "DataDomeSliderResult", "DataDomeTagsResult", "TrustDecisionPayloadResult", "TrustDecisionSignatureResult",
+    "UsageResult", "UsagePlan",
 ]
 
 
@@ -104,6 +105,46 @@ class KasadaVersionResult:
     version: str
     """The x-kpsdk-v value, such as "j-1.2.797". Send it verbatim on the /fp request
     and in the x-kpsdk-v header."""
+
+
+@dataclass
+class UsagePlan:
+    """The quota of one plan in a UsageResult."""
+    product: str
+    """The product the plan covers, such as "akamai" or "datadome"."""
+    requests_used: int
+    """The number of requests used from the plan."""
+    requests_quota: int
+    """The number of requests the plan allows."""
+    requests_remaining: int
+    """requests_quota minus requests_used."""
+    expires_at: str
+    """When the plan expires, as an ISO 8601 date-time string."""
+
+
+@dataclass
+class UsageResult:
+    """Returned by get_usage."""
+    balance_euro: float
+    """The pay-as-you-go balance in euros."""
+    plans: List[UsagePlan]
+    """The plans of the API key, one per product."""
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> "UsageResult":
+        return cls(
+            balance_euro=data["balanceEuro"],
+            plans=[
+                UsagePlan(
+                    product=plan["product"],
+                    requests_used=plan["requestsUsed"],
+                    requests_quota=plan["requestsQuota"],
+                    requests_remaining=plan["requestsRemaining"],
+                    expires_at=plan["expiresAt"],
+                )
+                for plan in data["plans"]
+            ],
+        )
 
 
 @dataclass

@@ -103,6 +103,18 @@ session = Session(
 )
 ```
 
+### Checking Usage
+
+`get_usage` returns the key's pay-as-you-go balance and the remaining requests of each plan. It is not counted as usage. `SessionAsync` has the same method.
+
+```python
+usage = session.get_usage()
+
+print(f"balance: €{usage.balance_euro}")
+for plan in usage.plans:
+    print(f"{plan.product}: {plan.requests_remaining} of {plan.requests_quota} left, expires {plan.expires_at}")
+```
+
 ## 🛡️ Akamai Bot Manager
 
 Bypass **Akamai Bot Manager** protection with sensor data generation, cookie validation, and challenge solving.

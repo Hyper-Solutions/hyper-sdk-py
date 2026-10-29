@@ -155,6 +155,66 @@ class SyncResults(unittest.TestCase):
             s.generate_sensor_data(sensor_input())
 
 
+USAGE_PLAN = {"expiresAt": "2027-07-31T00:00:00Z", "requestsUsed": 44235934, "requestsQuota": 9999999999,
+              "requestsRemaining": 9955764065, "product": "akamai"}
+
+
+def usage_handler(status, body):
+    """A MockTransport handler for the body-less usage GET that records each request."""
+    def handler(request: httpx.Request) -> httpx.Response:
+        handler.requests.append(request)
+        return httpx.Response(status, json=body)
+
+    handler.requests = []
+    return handler
+
+
+class Usage(unittest.TestCase):
+    def check_result(self, res):
+        self.assertEqual(res.balance_euro, 12.5)
+        self.assertEqual(len(res.plans), 1)
+        plan = res.plans[0]
+        self.assertEqual((plan.product, plan.requests_used, plan.requests_quota, plan.requests_remaining,
+                          plan.expires_at),
+                         ("akamai", 44235934, 9999999999, 9955764065, "2027-07-31T00:00:00Z"))
+
+    def check_request(self, handler):
+        self.assertEqual(len(handler.requests), 1)
+        req = handler.requests[0]
+        self.assertEqual((req.method, str(req.url)), ("GET", "https://api.hypersolutions.co/usage"))
+        self.assertEqual(req.content, b"")
+        self.assertEqual(req.headers["x-api-key"], "test-key")
+        self.assertNotIn("content-type", req.headers)
+
+    def test_sync(self):
+        handler = usage_handler(200, {"balanceEuro": 12.5, "plans": [USAGE_PLAN]})
+        s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(handler)))
+        self.check_result(s.get_usage())
+        self.check_request(handler)
+
+        s = Session("test-key", client=httpx.Client(transport=httpx.MockTransport(
+            usage_handler(403, {"error": "Invalid API key"}))))
+        with self.assertRaisesRegex(Exception, "Invalid API key"):
+            s.get_usage()
+
+    def test_async(self):
+        def run(handler):
+            async def go():
+                client = httpx.AsyncClient(transport=httpx.MockTransport(handler))
+                async with SessionAsync("test-key", client=client) as s:
+                    res = await s.get_usage()
+                await client.aclose()
+                return res
+
+            return asyncio.run(go())
+
+        handler = usage_handler(200, {"balanceEuro": 12.5, "plans": [USAGE_PLAN]})
+        self.check_result(run(handler))
+        self.check_request(handler)
+        with self.assertRaisesRegex(Exception, "Invalid API key"):
+            run(usage_handler(403, {"error": "Invalid API key"}))
+
+
 class AsyncResults(unittest.TestCase):
     def run_async(self, body, call):
         handler, sent = recorder(body)
