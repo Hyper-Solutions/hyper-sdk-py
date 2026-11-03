@@ -5,10 +5,12 @@ from urllib.parse import urlencode
 
 # Matches the tag a challenge page uses to load the bundle from
 # ct.captcha-delivery.com, capturing the URL. The name in front of the version
-# is left open so it keeps matching whatever DataDome calls the bundle, e.g.
-# interstitial.1.33.0.202609141.js or captcha.1.34.0.202609141.js.
+# is left open so it keeps matching whatever DataDome calls the bundle, and the
+# build segment after the version is optional: the bundle can be
+# interstitial.1.33.0.202609141.js, captcha.1.34.0.202609141.js or
+# interstitial.1.36.0.js.
 _CHALLENGE_SCRIPT_REGEX = re.compile(
-    r"""<script[^>]+src\s*=\s*["']([^"']*/[a-z_-]+\.\d+\.\d+\.\d+\.[^"']*\.js)["']"""
+    r"""<script[^>]+src\s*=\s*["']([^"']*/[a-z_-]+\.\d+\.\d+\.\d+(?:\.[^"']*)?\.js)["']"""
 )
 
 
