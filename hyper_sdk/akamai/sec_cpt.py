@@ -43,7 +43,8 @@ class SecCptChallenge:
             api_response.get('token', ''),
             api_response.get('timestamp', 0),
             api_response.get('nonce', ''),
-            api_response.get('difficulty', 0)
+            api_response.get('difficulty', 0),
+            api_response.get('count', 0)
         )
 
         duration = api_response.get('chlg_duration', 0)
@@ -108,6 +109,9 @@ class SecCptChallenge:
 
     def _generate_sec_cpt_answers(self, sec: str) -> List[str]:
         answers = []
+        if self.challenge_data.count <= 0:
+            return answers
+
         difficulty = self.challenge_data.difficulty
 
         while True:
