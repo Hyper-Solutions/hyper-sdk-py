@@ -3,16 +3,14 @@ import re
 from typing import Optional
 from urllib.parse import urlencode
 
-# Matches the tag a challenge page uses to load the bundle from
-# ct.captcha-delivery.com, capturing the URL. The name in front of the first dot
-# is left open so it keeps matching whatever DataDome calls the bundle, and the
-# version can sit anywhere after it: the bundle can be
-# interstitial.1.33.0.202609141.js, captcha.1.34.0.202609141.js,
+# A challenge page loads its bundle with the only deferred <script> tag on the
+# page, so the bundle is the src of the first tag carrying a defer attribute.
+# The file name is not checked: DataDome renames the bundle freely, e.g.
 # interstitial.1.36.0.js or captcha.build623.01-c-v1.38.0-2026-11-17-05h07.js.
-# A file with no version, such as the i.js or c.js loader, never matches.
-_CHALLENGE_SCRIPT_REGEX = re.compile(
-    r"""<script[^>]+src\s*=\s*["']([^"']*/[a-z_-]+\.[^"'/]*?\d+\.\d+\.\d+[^"'/]*\.js)["']"""
-)
+# The c.js and i.js loaders are not deferred and never match.
+_SCRIPT_TAG_REGEX = re.compile(r"<script\b([^>]*)>", re.IGNORECASE)
+_DEFER_ATTR_REGEX = re.compile(r"(?:^|\s)defer(?:\s|=|/|$)", re.IGNORECASE)
+_SRC_ATTR_REGEX = re.compile(r"""(?:^|\s)src\s*=\s*["']([^"']+)["']""", re.IGNORECASE)
 
 
 def parse_slider_device_check_link(src: str, datadome_cookie: str, referer: str) -> str:
@@ -136,8 +134,12 @@ def parse_challenge_script_url(html: str) -> Optional[str]:
                 script=script,
             ))
     """
-    match = _CHALLENGE_SCRIPT_REGEX.search(html)
-    if match is None:
-        return None
+    for tag in _SCRIPT_TAG_REGEX.finditer(html):
+        attrs = tag.group(1)
+        if not _DEFER_ATTR_REGEX.search(attrs):
+            continue
+        src = _SRC_ATTR_REGEX.search(attrs)
+        if src is not None:
+            return src.group(1)
 
-    return match.group(1)
+    return None
